@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log - Evidence přání videií v3.2.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .audit-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .audit-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px 15px 0 0;
+            margin-bottom: 0;
+        }
+
+        .audit-header h1 {
+            margin: 0;
+            font-size: 2.2em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .audit-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .filters-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-left: 1px solid #e9ecef;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .statistics-section {
+            background: white;
+            padding: 25px;
+            border-left: 1px solid #e9ecef;
+            border-right: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .logs-section {
+            background: white;
+            border-left: 1px solid #e9ecef;
+            border-right: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logs-table th {
+            background: #34495e;
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .logs-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .logs-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .severity-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .severity-warning {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .severity-error {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .severity-critical {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .details-btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .details-btn:hover {
+            background: #1976d2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: #34495e;
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .json-viewer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #e9ecef;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .current-page {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading i {
+            font-size: 2em;
+            margin-bottom: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .export-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #388e3c;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .back-nav {
+            margin-bottom: 20px;
+        }
+
+        .back-nav a {
+            color: #2196f3;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .back-nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="audit-container">
+        <div class="back-nav">
+            <a href="index.html">
+                <i class="fas fa-arrow-left"></i>
+                Zpět do aplikace
+            </a>
+        </div>
+
+        <div class="audit-header">
+            <h1>
+                <i class="fas fa-shield-alt"></i>
+                Audit Log - Protokol aktivit
+            </h1>
+            <p>Kompletní sledování všech akcí uživatelů v systému Evidence přání videií v3.2.0</p>
+        </div>
+
+        <div class="filters-section">
+            <h3><i class="fas fa-filter"></i> Filtry a vyhledávání</h3>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>Uživatel:</label>
+                    <input type="text" id="filter-username" placeholder="Uživatelské jméno">
+                </div>
+                <div class="filter-group">
+                    <label>Typ akce:</label>
+                    <select id="filter-action">
+                        <option value="">Všechny akce</option>
+                        <option value="login">Přihlášení</option>
+                        <option value="logout">Odhlášení</option>
+                        <option value="failed_login">Neúspěšné přihlášení</option>
+                        <option value="create_record">Vytvoření záznamu</option>
+                        <option value="update_record">Úprava záznamu</option>
+                        <option value="delete_record">Smazání záznamu</option>
+                        <option value="create_user">Vytvoření uživatele</option>
+                        <option value="update_user">Úprava uživatele</option>
+                        <option value="delete_user">Smazání uživatele</option>
+                        <option value="change_password">Změna hesla</option>
+                        <option value="export_data">Export dat</option>
+                        <option value="import_data">Import dat</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Závažnost:</label>
+                    <select id="filter-severity">
+                        <option value="">Všechny</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Varování</option>
+                        <option value="error">Chyba</option>
+                        <option value="critical">Kritická</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Datum od:</label>
+                    <input type="date" id="filter-date-from">
+                </div>
+                <div class="filter-group">
+                    <label>Datum do:</label>
+                    <input type="date" id="filter-date-to">
+                </div>
+                <div class="filter-group">
+                    <label>IP adresa:</label>
+                    <input type="text" id="filter-ip" placeholder="IP adresa">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Aplikovat filtry
+                </button>
+                <button class="btn btn-warning" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Vymazat filtry
+                </button>
+                <button class="btn btn-success" onclick="loadStatistics()">
+                    <i class="fas fa-chart-bar"></i> Načíst statistiky
+                </button>
+            </div>
+        </div>
+
+        <div class="statistics-section" id="statistics-section" style="display: none;">
+            <h3><i class="fas fa-chart-line"></i> Statistiky</h3>
+            <div class="stats-grid" id="stats-grid">
+                <!-- Statistiky se načtou dynamicky -->
+            </div>
+        </div>
+
+        <div class="logs-section">
+            <div class="export-section">
+                <button class="btn btn-success" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+                <button class="btn btn-danger" onclick="showCleanupModal()">
+                    <i class="fas fa-trash"></i> Vymazat staré logy
+                </button>
+            </div>
+
+            <div id="loading" class="loading">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Načítání audit logů...</p>
+            </div>
+
+            <div id="logs-content" style="display: none;">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Datum a čas</th>
+                            <th>Uživatel</th>
+                            <th>Akce</th>
+                            <th>Tabulka</th>
+                            <th>Závažnost</th>
+                            <th>IP adresa</th>
+                            <th>Detaily</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                        <!-- Data se načtou dynamicky -->
+                    </tbody>
+                </table>
+
+                <div class="pagination" id="pagination">
+                    <!-- Stránkování se načte dynamicky -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro detaily -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detail audit logu</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Detaily se načtou dynamicky -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro cleanup -->
+    <div id="cleanup-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vymazání starých audit logů</h3>
+                <span class="close" onclick="closeCleanupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Zadejte počet dní, které chcete zachovat (minimálně 30 dní):</p>
+                <div style="margin: 20px 0;">
+                    <input type="number" id="cleanup-days" value="365" min="30" style="width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <span style="margin-left: 10px;">dní</span>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="performCleanup()">
+                        <i class="fas fa-trash"></i> Potvrdit smazání
+                    </button>
+                    <button class="btn btn-primary" onclick="closeCleanupModal()" style="margin-left: 10px;">
+                        Zrušit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audit Log JavaScript
+        let currentPage = 1;
+        let currentFilters = {};
+
+        // Inicializace
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAuditLogs();
+        });
+
+        async function loadAuditLogs(page = 1) {
+            currentPage = page;
+            
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('logs-content').style.display = 'none';
+
+                const params = new URLSearchParams({
+                    page: page,
+                    limit: 50,
+                    ...currentFilters
+                });
+
+                const response = await fetch(`api.php?action=get-audit-logs&${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayLogs(result.data);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Chyba při načítání audit logů:', error);
+                alert('Chyba při načítání audit logů: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayLogs(data) {
+            const tbody = document.getElementById('logs-tbody');
+            tbody.innerHTML = '';
+
+            if (data.logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #666;">Žádné záznamy nebyly nalezeny.</td></tr>';
+                document.getElementById('logs-content').style.display = 'block';
+                return;
+            }
+
+            data.logs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                const severityClass = `severity-${log.severity}`;
+                const severityText = {
+                    'info': 'Info',
+                    'warning': 'Varování',
+                    'error': 'Chyba',
+                    'critical': 'Kritická'
+                }[log.severity] || log.severity;
+
+                const actionText = {
+                    'login': 'Přihlášení',
+                    'logout': 'Odhlášení',
+                    'failed_login': 'Neúspěšné přihlášení',
+                    'create_record': 'Vytvoření záznamu',
+                    'update_record': 'Úprava záznamu',
+                    'delete_record': 'Smazání záznamu',
+                    'create_user': 'Vytvoření uživatele',
+                    'update_user': 'Úprava uživatele',
+                    'delete_user': 'Smazání uživatele',
+                    'change_password': 'Změna hesla',
+                    'export_data': 'Export dat',
+                    'import_data': 'Import dat',
+                    'view_records': 'Zobrazení záznamů',
+                    'view_reports': 'Zobrazení reportů'
+                }[log.action_type] || log.action_type;
+
+                row.innerHTML = `
+                    <td>${log.id}</td>
+                    <td>${new Date(log.created_at).toLocaleString('cs-CZ')}</td>
+                    <td>${log.username || '<em>Neznámý</em>'}</td>
+                    <td><span class="action-badge">${actionText}</span></td>
+                    <td>${log.affected_table || '-'}</td>
+                    <td><span class="severity-badge ${severityClass}">${severityText}</span></td>
+                    <td>${log.ip_address}</td>
+                    <td><button class="details-btn" onclick="showDetails(${log.id})">Zobrazit</button></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+
+            // Stránkování
+            displayPagination(data.pagination);
+            document.getElementById('logs-content').style.display = 'block';
+        }
+
+        function displayPagination(pagination) {
+            const paginationDiv = document.getElementById('pagination');
+            paginationDiv.innerHTML = '';
+
+            // Předchozí stránka
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = 'Předchozí';
+            prevBtn.disabled = pagination.current_page <= 1;
+            prevBtn.onclick = () => loadAuditLogs(pagination.current_page - 1);
+            paginationDiv.appendChild(prevBtn);
+
+            // Informace o stránkách
+            const info = document.createElement('span');
+            info.textContent = `Stránka ${pagination.current_page} z ${pagination.total_pages} (${pagination.total_records} záznamů)`;
+            paginationDiv.appendChild(info);
+
+            // Následující stránka
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Následující';
+            nextBtn.disabled = pagination.current_page >= pagination.total_pages;
+            nextBtn.onclick = () => loadAuditLogs(pagination.current_page + 1);
+            paginationDiv.appendChild(nextBtn);
+        }
+
+        async function showDetails(logId) {
+            try {
+                const response = await fetch(`api.php?action=get-audit-logs&limit=1&page=1`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const log = result.data.logs.find(l => l.id == logId);
+                    if (log) {
+                        displayLogDetails(log);
+                    }
+                }
+            } catch (error) {
+                console.error('Chyba při načítání detailů:', error);
+                alert('Chyba při načítání detailů logu');
+            }
+        }
+
+        function displayLogDetails(log) {
+            const modalBody = document.getElementById('modal-body');
+            
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4>Základní informace</h4>
+                    <p><strong>ID:</strong> ${log.id}</p>
+                    <p><strong>Uživatel:</strong> ${log.username || 'Neznámý'} (ID: ${log.user_id || 'N/A'})</p>
+                    <p><strong>Akce:</strong> ${log.action_type}</p>
+                    <p><strong>Datum a čas:</strong> ${new Date(log.created_at).toLocaleString('cs-CZ')}</p>
+                    <p><strong>IP adresa:</strong> ${log.ip_address}</p>
+                    <p><strong>Závažnost:</strong> ${log.severity}</p>
+                    <p><strong>Prohlížeč:</strong> ${log.user_agent || 'Neznámý'}</p>
+                </div>
+                
+                ${log.affected_table ? `
+                <div style="margin-bottom: 20px;">
+                    <h4>Ovlivněná data</h4>
+                    <p><strong>Tabulka:</strong> ${log.affected_table}</p>
+                    <p><strong>ID záznamu:</strong> ${log.affected_id || 'N/A'}</p>
+                </div>
+                ` : ''}
+                
+                ${log.details ? `
+                <div style="margin-bottom: 20px;">
+                    <h4>Detaily</h4>
+                    <div class="json-viewer">${JSON.stringify(JSON.parse(log.details), null, 2)}</div>
+                </div>
+                ` : ''}
+                
+                ${log.old_values ? `
+                <div style="margin-bottom: 20px;">
+                    <h4>Původní hodnoty</h4>
+                    <div class="json-viewer">${JSON.stringify(JSON.parse(log.old_values), null, 2)}</div>
+                </div>
+                ` : ''}
+                
+                ${log.new_values ? `
+                <div style="margin-bottom: 20px;">
+                    <h4>Nové hodnoty</h4>
+                    <div class="json-viewer">${JSON.stringify(JSON.parse(log.new_values), null, 2)}</div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('details-modal').style.display = 'block';
+        }
+
+        function applyFilters() {
+            currentFilters = {};
+            
+            const username = document.getElementById('filter-username').value.trim();
+            if (username) currentFilters.username = username;
+            
+            const action = document.getElementById('filter-action').value;
+            if (action) currentFilters.action_type = action;
+            
+            const severity = document.getElementById('filter-severity').value;
+            if (severity) currentFilters.severity = severity;
+            
+            const dateFrom = document.getElementById('filter-date-from').value;
+            if (dateFrom) currentFilters.date_from = dateFrom;
+            
+            const dateTo = document.getElementById('filter-date-to').value;
+            if (dateTo) currentFilters.date_to = dateTo;
+            
+            const ip = document.getElementById('filter-ip').value.trim();
+            if (ip) currentFilters.ip_address = ip;
+            
+            loadAuditLogs(1);
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-username').value = '';
+            document.getElementById('filter-action').value = '';
+            document.getElementById('filter-severity').value = '';
+            document.getElementById('filter-date-from').value = '';
+            document.getElementById('filter-date-to').value = '';
+            document.getElementById('filter-ip').value = '';
+            
+            currentFilters = {};
+            loadAuditLogs(1);
+        }
+
+        async function loadStatistics() {
+            try {
+                const params = new URLSearchParams();
+                
+                const dateFrom = document.getElementById('filter-date-from').value;
+                if (dateFrom) params.append('date_from', dateFrom);
+                
+                const dateTo = document.getElementById('filter-date-to').value;
+                if (dateTo) params.append('date_to', dateTo);
+
+                const response = await fetch(`api.php?action=audit-statistics&${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStatistics(result.data);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Chyba při načítání statistik:', error);
+                alert('Chyba při načítání statistik: ' + error.message);
+            }
+        }
+
+        function displayStatistics(stats) {
+            const statsGrid = document.getElementById('stats-grid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total_actions}</div>
+                    <div class="stat-label">Celkem akcí</div>
+                </div>
+            `;
+
+            // Top akce
+            if (stats.actions_by_type.length > 0) {
+                const topAction = stats.actions_by_type[0];
+                statsGrid.innerHTML += `
+                    <div class="stat-card">
+                        <div class="stat-number">${topAction.count}</div>
+                        <div class="stat-label">Nejčastější: ${topAction.action_type}</div>
+                    </div>
+                `;
+            }
+
+            // Top uživatel
+            if (stats.actions_by_user.length > 0) {
+                const topUser = stats.actions_by_user[0];
+                statsGrid.innerHTML += `
+                    <div class="stat-card">
+                        <div class="stat-number">${topUser.count}</div>
+                        <div class="stat-label">Nejaktivnější: ${topUser.username}</div>
+                    </div>
+                `;
+            }
+
+            // Varování a chyby
+            const warnings = stats.actions_by_severity.find(s => s.severity === 'warning')?.count || 0;
+            const errors = stats.actions_by_severity.find(s => s.severity === 'error')?.count || 0;
+            const critical = stats.actions_by_severity.find(s => s.severity === 'critical')?.count || 0;
+            
+            statsGrid.innerHTML += `
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);">
+                    <div class="stat-number">${warnings + errors + critical}</div>
+                    <div class="stat-label">Varování + Chyby</div>
+                </div>
+            `;
+
+            document.getElementById('statistics-section').style.display = 'block';
+        }
+
+        async function exportCSV() {
+            try {
+                const params = new URLSearchParams(currentFilters);
+                const url = `api.php?action=export-audit-csv&${params}`;
+                
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `audit_log_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                } else {
+                    throw new Error('Export se nezdařil');
+                }
+            } catch (error) {
+                console.error('Chyba při exportu:', error);
+                alert('Chyba při exportu: ' + error.message);
+            }
+        }
+
+        function showCleanupModal() {
+            document.getElementById('cleanup-modal').style.display = 'block';
+        }
+
+        function closeCleanupModal() {
+            document.getElementById('cleanup-modal').style.display = 'none';
+        }
+
+        async function performCleanup() {
+            const days = parseInt(document.getElementById('cleanup-days').value);
+            
+            if (days < 30) {
+                alert('Minimální doba uchování je 30 dní');
+                return;
+            }
+
+            if (!confirm(`Opravdu chcete smazat audit logy starší než ${days} dní? Tato akce je nevratná.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`api.php?action=cleanup-audit-logs&days=${days}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Bylo smazáno ${result.data.deleted_count} starých audit logů`);
+                    closeCleanupModal();
+                    loadAuditLogs();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Chyba při mazání:', error);
+                alert('Chyba při mazání: ' + error.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').style.display = 'none';
+        }
+
+        // Zavření modálů kliknutím mimo obsah
+        window.onclick = function(event) {
+            const detailsModal = document.getElementById('details-modal');
+            const cleanupModal = document.getElementById('cleanup-modal');
+            
+            if (event.target === detailsModal) {
+                closeModal();
+            }
+            if (event.target === cleanupModal) {
+                closeCleanupModal();
+            }
+        }
+    </script>
+</body>
+</html>

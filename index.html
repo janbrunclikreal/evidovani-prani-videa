@@ -1,1036 +1,518 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Evidování přání videí</title>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pap4k6tr6CzkVQ+p6aA3YPV1K5X8fQx4w4CQwwdMSEUig5N9wNNCbV2L0DrlLZ/cp8IYz1Nzz0zWeS9JTV/2+Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <style>
-    body { background-color: #F7F7F7; font-family: Arial, sans-serif; margin: -25px; }
-    .dirty-record { outline: 2px solid red; }
-    .features-overview { margin-top: 10px; padding: 10px; border: 1px solid #aaa; background: #f9f9f9; }
-    .features-overview ul { list-style-type: disc; margin-left: 10px; }
-    .pagination { margin: 10px 0; text-align: center; }
-    .pagination button { margin: 0 10px; font-size: 32px; padding: 5px 10px; }
-    .action-buttons { display: flex; gap: 10px; }
-    .custom-button { transition: background-color 0.3s, box-shadow 0.3s; border-radius: 5px; padding: 10px 20px; font-size: 1rem; }
-    .custom-button:hover { background-color: #3273dc; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    .prani-box { border: 1px solid #000; padding: 10px; margin: 10px auto; text-align: center; width: 80%; font-size: 24px; }
-    .sidebar { border-right: 1px solid #ccc; min-height: 80vh; padding-right: 15px; }
-    .prijato-row { background-color: #d4edda !important; }
-    .zaplaceno-row { background-color: #d1ecf1 !important; }
-    .zaslano-row { background-color: #fff3cd !important; }
-    .odmitnuto-row { background-color: #f8d7da !important; }
-    .vychozi-row { background-color: #e2e3e5 !important; }
-    .column { width: 103%; }
-    #floating-window { position: fixed; width: 690px; height: 800px; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 1px solid #ccc; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 1000; }
-    button { margin-top: 15px; margin-bottom: 15px; }
-    .login-form { width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidence přání videií v3.2.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div id="app" class="section">
-    <div v-if="!user" class="login-form">
-      <h2 class="title is-3 has-text-centered">Přihlášení</h2>
-      <form @submit.prevent="login">
-        <div class="field">
-          <label class="label">Uživatelské jméno</label>
-          <div class="control">
-            <input class="input" type="text" v-model="loginForm.username" required>
-          </div>
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <span>Načítání...</span>
         </div>
-        <div class="field">
-          <label class="label">Heslo</label>
-          <div class="control">
-            <input class="input" type="password" v-model="loginForm.password" required>
-          </div>
-        </div>
-        <div class="control has-text-centered">
-          <button type="submit" class="button is-primary">Přihlásit se</button>
-        </div>
-        <p v-if="loginMessage" class="help is-danger has-text-centered">{{ loginMessage }}</p>
-      </form>
     </div>
 
-    <div v-if="user">
-      <nav class="navbar is-light is-hidden-mobile" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
-          <strong class="navbar-item">Evidování přání videí</strong>
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu" @click="toggleNavbar">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-          </a>
-        </div>
-        <div id="navbarMenu" class="navbar-menu" :class="{ 'is-active': isNavbarActive }">
-          <div class="navbar-start">
-            <a class="navbar-item" @click="switchView('home')">Hlavní stránka</a>
-            <a class="navbar-item" @click="switchView('new')" v-if="isAdmin">Nový zápis</a>
-            <a class="navbar-item" @click="switchView('daily')">Denní přehled</a>
-            <a class="navbar-item" @click="switchView('monthly')">Měsíční přehled</a>
-            <a class="navbar-item" @click="switchView('yearly')">Roční přehled</a>
-            <a class="navbar-item" @click="switchView('importExport')" v-if="isAdmin">Import/Export</a>
-            <a class="navbar-item" @click="switchView('userManagement')" v-if="isAdmin">Správa uživatelů</a>
-            <a class="navbar-item" @click="switchView('changePassword')">Změna hesla</a>
-          </div>
-          <div class="navbar-end">
-            <div class="navbar-item">
-              <span class="has-text-weight-bold mr-2">Uživatel: {{ user.username }}</span>
-              <button class="button is-danger is-light" @click="logout">Odhlásit se</button>
+    <!-- Login form -->
+    <div id="login-container" class="login-container">
+        <div class="login-form">
+            <div class="login-header">
+                <i class="fas fa-video"></i>
+                <h1>Evidence přání videií</h1>
+                <p>Verze 3.2.0</p>
             </div>
-          </div>
-        </div>
-      </nav>
-
-      <aside class="column is-full is-hidden-desktop">
-        <p class="menu-label">Navigace</p>
-        <ul class="menu-list">
-          <li><a @click="switchView('home')">Hlavní stránka</a></li>
-          <li v-if="isAdmin"><a @click="switchView('new')">Nový zápis</a></li>
-          <li><a @click="switchView('daily')">Denní přehled</a></li>
-          <li><a @click="switchView('monthly')">Měsíční přehled</a></li>
-          <li><a @click="switchView('yearly')">Roční přehled</a></li>
-          <li v-if="isAdmin"><a @click="switchView('importExport')">Import/Export</a></li>
-          <li v-if="isAdmin"><a @click="switchView('userManagement')">Správa uživatelů</a></li>
-          <li><a @click="switchView('changePassword')">Změna hesla</a></li>
-          <li><a @click="logout">Odhlásit se</a></li>
-        </ul>
-      </aside>
-
-      <main class="column">
-        <div v-if="currentView === 'home'">
-          <h2 class="title is-3">Vítejte, {{ user.username }}!</h2>
-          <div class="box">
-            <h3 class="title is-4">Přehled funkcí projektu:</h3>
-            <ul>
-              <li v-if="isAdmin"><strong>Nový zápis:</strong> Zadávání záznamů (datum, jméno, účet, částka, stav, přání, nick, link, faktura) s automatickým focus na pole "Jméno".</li>
-              <li><strong>Denní přehled:</strong> Přehled záznamů se zobrazuje s filtrováním dle stavu, obsahu přání, nicku a sloupců "Link" a "Faktura". Řádky jsou obarveny dle stavu a lze je tisknout.</li>
-              <li><strong>Stránkování:</strong> Denní přehled je rozdělen do stránek po 10 záznamech.</li>
-              <li><strong>Měsíční přehled:</strong> Agregovaný přehled záznamů za vybraný měsíc a rok s předvyplněnými hodnotami.</li>
-              <li><strong>Roční přehled:</strong> Agregovaný přehled celkových částek za každý měsíc ve vybraném roce.</li>
-              <li v-if="isAdmin"><strong>Import/Export databáze:</strong> Export do CSV (s dynamickým názvem dle data a času) a import CSV souboru.</li>
-              <li v-if="isAdmin"><strong>Správa uživatelů:</strong> Administrátoři mohou vytvářet nové uživatele a měnit jejich hesla, uživatelská jména a role.</li>
-              <li><strong>Změna hesla:</strong> Každý uživatel si může změnit své heslo.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div v-if="currentView === 'new' && isAdmin" class="container is-fluid">
-          <h2 class="title is-3">Nový zápis</h2>
-          <form @submit.prevent="createRecord">
-            <table class="form-table">
-              <tr>
-                <td><label for="datum">Datum:</label></td>
-                <td><input type="date" id="datum" v-model="form.datum" class="input" style="width: auto; max-width: 150px;" required></td>
-              </tr>
-              <tr>
-                <td><label for="jmeno">Jméno:</label></td>
-                <td><input type="text" id="jmeno" v-model="form.jmeno" class="input" required autofocus></td>
-              </tr>
-              <tr>
-                <td><label for="ucet">Účet:</label></td>
-                <td>
-                  <input type="text" id="ucet" v-model="form.ucet" class="input" @input="formatUcet" required maxlength="9" pattern="\d{4}\/\d{4}" title="Zadejte účet ve formátu NNNN/NNNN" placeholder="NNNN/NNNN">
-                </td>
-              </tr>
-              <tr>
-                <td><label for="castka">Částka:</label></td>
-                <td><input type="number" id="castka" step="1" v-model="form.castka" class="input" placeholder="100" required></td>
-              </tr>
-              <tr>
-                <td><label>Stav:</label></td>
-                <td>
-                  <div class="radio-group">
-                    <label><input type="radio" value="prijato" v-model="form.stav"> přijato</label>
-                    <label><input type="radio" value="zaplaceno" v-model="form.stav" checked> zaplaceno</label>
-                    <label><input type="radio" value="zaslano" v-model="form.stav"> zaslano</label>
-                    <label><input type="radio" value="odmitnuto" v-model="form.stav"> odmitnuto</label>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td><label for="prani">Přání:</label></td>
-                <td><textarea id="prani" v-model="form.prani" class="textarea" rows="12" style="width: 100%;" maxlength="1024"></textarea></td>
-              </tr>
-              <tr>
-                <td><label for="nick">Nick:</label></td>
-                <td><input type="text" id="nick" v-model="form.nick" class="input" placeholder="Pokud není, bude nastaven '-'"></td>
-              </tr>
-              <tr>
-                <td><label for="link">Link:</label></td>
-                <td><input type="text" id="link" v-model="form.link" class="input" placeholder="Volitelný odkaz (max 255 znaků)"></td>
-              </tr>
-              <tr>
-                <td><label for="faktura">Faktura:</label></td>
-                <td><input type="text" id="faktura" v-model="form.faktura" class="input" placeholder="Volitelný odkaz pro fakturu (max 255 znaků)"></td>
-              </tr>
-              <tr>
-                <td colspan="2" class="has-text-centered">
-                  <button type="submit" class="button is-primary custom-button" style="margin-left: 15px;">
-                    <span class="icon"><i class="fas fa-save"></i></span>
-                    <span>Uložit záznam</span>
-                  </button>
-                </td>
-              </tr>
-            </table>
-          </form>
-          <p class="mt-3">Celkový počet záznamů: {{ recordCount }}</p>
-          <p v-if="message" class="has-text-danger">{{ message }}</p>
-        </div>
-
-        <div v-if="currentView === 'daily'" class="container fluid">
-          <h2 class="title is-3">Denní přehled</h2>
-          <div class="columns is-vcentered mb-3">
-            <div class="column is-one-third" style="width: auto; max-width: 150px;">
-              <label class="label" for="dailyDate">Vyberte datum:</label>
-              <input type="date" id="dailyDate" v-model="dailyDate" class="input" style="width: auto; max-width: 150px;" required>
-            </div>
-            <div class="column is-narrow">
-              <button @click="fetchDaily" class="button is-primary mt-4" style="margin-left: 15px;">Načíst</button>
-            </div>
-          </div>
-          <div v-if="dailyRecords.length" class="box mb-3" style="width: auto; max-width: 400px;">
-            <h5 class="title is-5">Filtrace záznamů</h5>
-            <div class="columns">
-              <div class="column">
-                <label class="label" for="filterStav">Stav:</label>
-                <div class="select">
-                  <select id="filterStav" v-model="dailyFilter.stav">
-                    <option value="">-- Vše --</option>
-                    <option value="prijato">Přijato</option>
-                    <option value="zaplaceno">Zaplaceno</option>
-                    <option value="zaslano">Zaslano</option>
-                    <option value="odmitnuto">Odmitnuto</option>
-                    <option value="vychozi prijato">Výchozí Přijato</option>
-                  </select>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Uživatelské jméno</label>
+                    <input type="text" id="username" name="username" required>
                 </div>
-              </div>
-              <div class="column">
-                <label class="label" for="filterPrani">Přání obsahuje:</label>
-                <input type="text" id="filterPrani" v-model="dailyFilter.prani" class="input" placeholder="Zadejte text">
-              </div>
-              <div class="column">
-                <label class="label" for="filterNick">Nick obsahuje:</label>
-                <input type="text" id="filterNick" v-model="dailyFilter.nick" class="input" placeholder="Zadejte nick">
-              </div>
-            </div>
-          </div>
-          <div v-if="totalDailyPages > 1" class="pagination">
-            <button @click="prevPage" :disabled="dailyCurrentPage === 1" class="button is-small" style="margin-left: 15px;">Předchozí</button>
-            <span class="is-size-5">Stránka {{ dailyCurrentPage }} z {{ totalDailyPages }} ({{ filteredDailyRecords.length }})</span>
-            <button @click="nextPage" :disabled="dailyCurrentPage === totalDailyPages" class="button is-small" style="margin-left: 15px;">Další</button>
-          </div>
-          <div class="table-container">
-            <table v-if="paginatedDailyRecords.length" class="table is-bordered is-striped is-hoverable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Datum</th>
-                  <th>Jméno</th>
-                  <th>Účet</th>
-                  <th>Částka</th>
-                  <th>Stav</th>
-                  <th>Přání</th>
-                  <th>Nick</th>
-                  <th>Link</th>
-                  <th>Faktura</th>
-                  <th v-if="isAdmin">Akce</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="record in paginatedDailyRecords" :key="record.id" :class="[ getRowClass(record), record.dirty && isAdmin ? 'dirty-record' : '' ]">
-                  <td>{{ record.id }}</td>
-                  <td>{{ record.datum_formatted }}</td>
-                  <td>{{ record.jmeno }}</td>
-                  <td>{{ record.ucet }}</td>
-                  <td>{{ record.castka }}</td>
-                  <td>
-                    <div v-if="isAdmin" class="select">
-                      <select v-model="record.stav" @change="updateStatus(record)">
-                        <option value="prijato">Přijato</option>
-                        <option value="zaplaceno">Zaplaceno</option>
-                        <option value="zaslano">Zaslano</option>
-                        <option value="odmitnuto">Odmitnuto</option>
-                        <option value="vychozi prijato">Výchozí Přijato</option>
-                      </select>
-                    </div>
-                    <span v-else>{{ record.stav }}</span>
-                  </td>
-                  <td>
-                    <textarea v-if="isAdmin" v-model="record.prani" rows="2" cols="50" style="width: 300px;" class="textarea" @focus="expandTextarea($event)" @blur="shrinkTextarea($event)" @input="markDirty(record)"></textarea>
-                    <span v-else>{{ record.prani }}</span>
-                  </td>
-                  <td>
-                    <input v-if="isAdmin" type="text" v-model="record.nick" class="input" @input="markDirty(record)" style="width: 200px;">
-                    <span v-else>{{ record.nick }}</span>
-                  </td>
-                  <td>
-                    <input v-if="isAdmin" type="text" v-model="record.link" class="input" @input="markDirty(record)" placeholder="Zadejte odkaz">
-                    <span v-else><a :href="record.link" target="_blank">{{ record.link }}</a></span>
-                  </td>
-                  <td>
-                    <input v-if="isAdmin" type="text" v-model="record.faktura" class="input" @input="markDirty(record)" placeholder="Zadejte odkaz faktury">
-                    <span v-else>{{ record.faktura }}</span>
-                  </td>
-                  <td v-if="isAdmin">
-                    <div class="action-buttons">
-                      <button @click="updateRecord(record)" class="button is-primary custom-button" :disabled="!record.dirty" style="margin-left: 15px;">
-                        <span class="icon"><i class="fas fa-save"></i></span>
-                        <span>Uložit změny</span>
-                      </button>
-                      <button @click="printRecord(record)" class="button is-info custom-button" style="margin-left: 15px;">
-                        <span class="icon"><i class="fas fa-print"></i></span>
-                        <span>Tisk</span>
-                      </button>
-                      <button @click="openInstagram(record)" class="button is-danger custom-button" style="margin-left: 15px;">
-                        <span class="icon"><i class="fab fa-instagram"></i></span>
-                        <span>Instagram Chat</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="notification is-danger has-text-centered">
-            Nebyl nalezen žádný záznam.
-          </div>
-          <p v-if="filteredDailyRecords.length" class="is-size-5">Celkem: {{ filteredDailyTotal.toFixed(2) }}</p>
-          <p v-if="filteredDailyRecords.length" class="is-size-5">Celkový počet záznamů: {{ filteredDailyRecords.length }}</p>
-        </div>
-
-        <div v-if="currentView === 'monthly'" class="container fluid">
-          <h2 class="title is-3">Měsíční přehled</h2>
-          <div class="columns mb-3">
-            <div class="column is-one-third">
-              <label class="label" for="month">Měsíc (číslo):</label>
-              <input type="number" id="month" v-model="monthly.month" min="1" max="12" class="input" required style="width: auto; max-width: 80px;">
-            </div>
-            <div class="column is-one-third">
-              <label class="label" for="year">Rok:</label>
-              <input type="number" id="year" v-model="monthly.year" class="input" required style="width: auto; max-width: 80px;">
-            </div>
-            <div class="column is-one-third is-flex is-align-items-end">
-              <button @click="fetchMonthly" class="button is-primary" style="width: auto; max-width: 100px; margin-left: 15px;">Načíst</button>
-            </div>
-          </div>
-          <div class="table-container">
-            <table v-if="groupedMonthlyRecords.length" class="table is-bordered is-striped">
-              <thead>
-                <tr>
-                  <th>Datum</th>
-                  <th>Celková částka</th>
-                  <th>Počet záznamů</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="group in groupedMonthlyRecords" :key="group.datum">
-                  <td>{{ group.datum }}</td>
-                  <td>{{ group.castka.toFixed(2) }}</td>
-                  <td>{{ group.count }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p v-if="monthlyTotal" class="is-size-5">Celkem: {{ monthlyTotal.toFixed(2) }}</p>
-          <p v-if="monthlyRecords.length" class="is-size-5">Celkový počet záznamů za celý měsíc: {{ monthlyRecords.length }}</p>
-        </div>
-        
-        <div v-if="currentView === 'yearly'" class="container fluid">
-          <h2 class="title is-3">Roční přehled</h2>
-          <div class="columns mb-3">
-            <div class="column is-one-third">
-              <label class="label" for="year">Rok:</label>
-              <input type="number" id="year" v-model="yearly.year" class="input" required style="width: auto; max-width: 80px;">
-            </div>
-            <div class="column is-one-third is-flex is-align-items-end">
-              <button @click="fetchYearly" class="button is-primary" style="width: auto; max-width: 100px; margin-left: 15px;">Načíst</button>
-            </div>
-          </div>
-          <div class="table-container">
-            <table v-if="yearlyRecords.length" class="table is-bordered is-striped">
-              <thead>
-                <tr>
-                  <th>Měsíc</th>
-                  <th>Celková částka</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="record in yearlyRecords" :key="record.month">
-                  <td>{{ record.month }}</td>
-                  <td>{{ parseFloat(record.total_castka).toFixed(2) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p v-if="yearlyTotal" class="is-size-5">Celkem za rok: {{ yearlyTotal.toFixed(2) }}</p>
-        </div>
-
-        <div v-if="currentView === 'importExport' && isAdmin" class="container fluid">
-          <h2 class="title is-3">Import/Export databáze</h2>
-          <div class="mb-3">
-            <h3 class="title is-4">Export databáze</h3>
-            <a :href="'api.php?action=export'" download>
-              <button class="button is-primary custom-button" style="margin-left: 15px;">Exportovat do CSV</button>
-            </a>
-          </div>
-          <hr>
-          <div class="mb-3">
-            <h3 class="title is-4">Import databáze</h3>
-            <p>Vyberte, zda chcete smazat stávající záznamy nebo přidat nové:</p>
-            <div class="field">
-              <div class="control">
-                <label class="radio">
-                  <input type="radio" value="delete" v-model="importMode">
-                  Smazat stávající záznamy
-                </label>
-                <label class="radio">
-                  <input type="radio" value="append" v-model="importMode">
-                  Přidat nové záznamy
-                </label>
-              </div>
-            </div>
-            <form @submit.prevent="importDatabase" enctype="multipart/form-data" class="mt-3">
-              <div class="field">
-                <div class="control">
-                  <input type="file" ref="importFile" accept=".csv" class="input" required>
+                <div class="form-group">
+                    <label for="password">Heslo</label>
+                    <input type="password" id="password" name="password" required>
                 </div>
-              </div>
-              <div class="control">
-                <button type="submit" class="button is-primary custom-button" style="margin-left: 15px;">Importovat CSV</button>
-              </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Přihlásit se
+                </button>
             </form>
-          </div>
-          <p v-if="importMessage" class="notification is-info">{{ importMessage }}</p>
         </div>
+    </div>
 
-        <div v-if="currentView === 'userManagement' && isAdmin" class="container fluid">
-          <h2 class="title is-3">Správa uživatelů</h2>
-          <div class="box mb-3">
-            <h3 class="title is-4">Vytvořit nového uživatele</h3>
-            <form @submit.prevent="userRegister">
-              <div class="field">
-                <label class="label">Uživatelské jméno</label>
-                <div class="control"><input class="input" type="text" v-model="newUser.username" required></div>
-              </div>
-              <div class="field">
-                <label class="label">Heslo</label>
-                <div class="control"><input class="input" type="password" v-model="newUser.password" required></div>
-              </div>
-              <div class="field">
-                <label class="label">Role</label>
-                <div class="select">
-                  <select v-model="newUser.role">
-                    <option value="user">Uživatel</option>
-                    <option value="admin">Admin</option>
-                  </select>
+    <!-- Main application -->
+    <div id="main-app" class="main-app" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-video"></i>
+                    <span>Evidence přání videií v3.2.0</span>
                 </div>
-              </div>
-              <div class="control">
-                <button type="submit" class="button is-primary">Vytvořit uživatele</button>
-              </div>
-              <p v-if="registerMessage" class="help">{{ registerMessage }}</p>
-            </form>
-          </div>
-          <div class="box">
-            <h3 class="title is-4">Správa stávajících uživatelů</h3>
-            <p v-if="userUpdateMessage" class="help">{{ userUpdateMessage }}</p>
-            <div class="table-container">
-              <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-                <thead>
-                  <tr><th>ID</th><th>Jméno</th><th>Role</th><th>Nové jméno</th><th>Nová role</th><th>Nové heslo</th><th>Akce</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="u in users" :key="u.id">
-                    <td>{{ u.id }}</td>
-                    <td>{{ u.username }}</td>
-                    <td>{{ u.role }}</td>
-                    <td><input class="input is-small" type="text" v-model="u.newUsername" :placeholder="u.username"></td>
-                    <td>
-                      <div class="select is-small">
-                        <select v-model="u.newRole">
-                          <option value="user">Uživatel</option>
-                          <option value="admin">Admin</option>
+                <div class="user-info">
+                    <span id="current-user"></span>
+                    <button id="logout-btn" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Odhlásit
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <button class="nav-btn active" data-section="dashboard">
+                <i class="fas fa-chart-bar"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-btn" data-section="records">
+                <i class="fas fa-list"></i>
+                <span>Denní přehled</span>
+            </button>
+            <button class="nav-btn" data-section="new-record">
+                <i class="fas fa-plus"></i>
+                <span>Nový zápis</span>
+            </button>
+            <button class="nav-btn" data-section="monthly">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Měsíční přehled</span>
+            </button>
+            <button class="nav-btn" data-section="yearly">
+                <i class="fas fa-chart-line"></i>
+                <span>Roční přehled</span>
+            </button>
+            <button class="nav-btn" data-section="import-export">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Import/Export</span>
+            </button>
+            <button class="nav-btn" data-section="users" id="users-nav" style="display: none;">
+                <i class="fas fa-users"></i>
+                <span>Uživatelé</span>
+            </button>
+            <button class="nav-btn" id="audit-nav" style="display: none;" onclick="openAuditLogs()">
+                <i class="fas fa-shield-alt"></i>
+                <span>Audit Log</span>
+            </button>
+        </nav>
+
+        <!-- Content sections -->
+        <main class="content">
+            <!-- Dashboard -->
+            <section id="dashboard-section" class="section active">
+                <div id="dashboard-iframe-container" style="width: 100%; height: calc(100vh - 160px); border: none; overflow: hidden;">
+                    <iframe id="dashboard-iframe" src="dashboard.html" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </section>
+
+            <!-- Denní přehled -->
+            <section id="records-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list"></i> Denní přehled</h2>
+                    <div class="filters">
+                        <select id="stav-filter">
+                            <option value="">Všechny stavy</option>
+                            <option value="zaplaceno">Zaplaceno</option>
+                            <option value="zaslano">Zasláno</option>
+                            <option value="odmitnuto">Odmítnuto</option>
+                            <option value="rozpracovane">Rozpracované</option>
                         </select>
-                      </div>
-                    </td>
-                    <td><input class="input is-small" type="password" v-model="u.newPassword"></td>
-                    <td>
-                      <button class="button is-primary is-small" @click="adminUserUpdate(u.id, u.newUsername, u.newRole, u.newPassword)">Uložit</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        
-        <div v-if="currentView === 'changePassword' && user" class="container fluid">
-          <h2 class="title is-3">Změna hesla</h2>
-          <form @submit.prevent="userChangePassword">
-            <div class="field">
-              <label class="label">Nové heslo</label>
-              <div class="control"><input class="input" type="password" v-model="changePasswordForm.password" required></div>
-            </div>
-            <div class="field">
-              <label class="label">Potvrzení nového hesla</label>
-              <div class="control"><input class="input" type="password" v-model="changePasswordForm.confirmPassword" required></div>
-            </div>
-            <div class="control">
-              <button type="submit" class="button is-primary">Změnit heslo</button>
-            </div>
-            <p v-if="passwordChangeMessage" class="help">{{ passwordChangeMessage }}</p>
-          </form>
-        </div>
+                        <input type="text" id="prani-filter" placeholder="Filtr přání">
+                        <input type="text" id="nick-filter" placeholder="Filtr nick">
+                        <input type="date" id="datum-od-filter">
+                        <input type="date" id="datum-do-filter">
+                        <button id="apply-filters" class="btn btn-primary">
+                            <i class="fas fa-filter"></i>
+                            Filtrovat
+                        </button>
+                        <button id="clear-filters" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Vyčistit
+                        </button>
+                    </div>
+                </div>
 
-      </main>
+                <div class="table-container">
+                    <table id="records-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Datum</th>
+                                <th>Jméno</th>
+                                <th>Účet</th>
+                                <th>Částka</th>
+                                <th>Stav</th>
+                                <th>Přání</th>
+                                <th>Nick</th>
+                                <th>Link</th>
+                                <th>Faktura</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody">
+                        </tbody>
+                    </table>
+                </div>
 
-      <div id="floating-window" v-if="floatingWindowActive">
-        <div class="box">
-          <button class="delete" @click="floatingWindowActive = false"></button>
-          <p>Plovoucí okno (690x800 px) – vystředěné uprostřed tabletu.</p>
-        </div>
-      </div>
-    </div>
-  </div>
+                <div class="pagination" id="pagination">
+                </div>
 
-  <script>
-    new Vue({
-      el: '#app',
-      data: {
-        user: null,
-        isAdmin: false,
-        currentView: 'home',
-        message: '',
-        importMessage: '',
-        loginMessage: '',
-        registerMessage: '',
-        userUpdateMessage: '',
-        passwordChangeMessage: '',
-        importMode: 'append',
-        floatingWindowActive: false,
-        loginForm: { username: '', password: '' },
-        newUser: { username: '', password: '', role: 'user' },
-        changePasswordForm: { password: '', confirmPassword: '' },
-        users: [],
-        form: {
-          datum: new Date().toISOString().slice(0, 10),
-          jmeno: '',
-          ucet: '',
-          castka: '100',
-          stav: 'zaplaceno',
-          prani: '',
-          nick: '',
-          link: '',
-          faktura: ''
-        },
-        dailyDate: new Date().toISOString().slice(0, 10),
-        dailyRecords: [],
-        dailyFilter: { stav: '', prani: '', nick: '' },
-        monthly: {
-          month: new Date().getMonth() + 1,
-          year: new Date().getFullYear()
-        },
-        monthlyRecords: [],
-        monthlyTotal: 0,
-        yearly: {
-          year: new Date().getFullYear()
-        },
-        yearlyRecords: [],
-        yearlyTotal: 0,
-        recordCount: 0,
-        dailyCurrentPage: 1,
-        isNavbarActive: false,
-        browserName: '',
-        resolution: '',
-        userAgent: '',
-        localIP: 'N/A',
-        renderTime: 0,
-        deviceType: 'Jiné'
-      },
-      computed: {
-        filteredDailyRecords() {
-          return this.dailyRecords.filter(record => {
-            let ok = true;
-            if (this.dailyFilter.stav && record.stav !== this.dailyFilter.stav) ok = false;
-            if (this.dailyFilter.prani && !record.prani.toLowerCase().includes(this.dailyFilter.prani.toLowerCase())) ok = false;
-            if (this.dailyFilter.nick && !record.nick.toLowerCase().includes(this.dailyFilter.nick.toLowerCase())) ok = false;
-            return ok;
-          });
-        },
-        filteredDailyTotal() {
-          return this.filteredDailyRecords.reduce((sum, record) => sum + (parseFloat(record.castka) || 0), 0);
-        },
-        dailyTotal() {
-          return this.dailyRecords.reduce((sum, record) => sum + (parseFloat(record.castka) || 0), 0);
-        },
-        dailyCount() {
-          return this.dailyRecords.length;
-        },
-        groupedMonthlyRecords() {
-          let groups = {};
-          this.monthlyRecords.forEach(record => {
-            let date = record.datum_formatted;
-            let amount = parseFloat(record.castka);
-            if (!groups[date]) {
-              groups[date] = { sum: 0, count: 0 };
-            }
-            groups[date].sum += amount;
-            groups[date].count++;
-          });
-          return Object.keys(groups).map(date => ({
-            datum: date,
-            castka: groups[date].sum,
-            count: groups[date].count
-          }));
-        },
-        paginatedDailyRecords() {
-          let start = (this.dailyCurrentPage - 1) * 10;
-          return this.filteredDailyRecords.slice(start, start + 10);
-        },
-        totalDailyPages() {
-          return Math.ceil(this.filteredDailyRecords.length / 10);
-        },
-        formattedRenderTime() {
-          return (Math.max(0, this.renderTime) / 1000).toFixed(4);
-        }
-      },
-      methods: {
-        async checkSession() {
-          try {
-            const response = await fetch('api.php?action=checkSession');
-            const data = await response.json();
-            if (data.status === 'success' && data.isLoggedIn) {
-              this.user = data.user;
-              this.isAdmin = data.user.role === 'admin';
-              this.currentView = 'home';
-            } else {
-              this.user = null;
-              this.isAdmin = false;
-              this.currentView = 'login';
-            }
-          } catch (err) {
-            console.error('Session check failed:', err);
-            this.user = null;
-            this.isAdmin = false;
-            this.currentView = 'login';
-          }
-        },
-        async login() {
-          const formData = new FormData();
-          formData.append('username', this.loginForm.username);
-          formData.append('password', this.loginForm.password);
-          try {
-            const response = await fetch('api.php?action=login', { method: 'POST', body: formData });
-            const data = await response.json();
-            if (data.status === 'success') {
-              this.user = data.user;
-              this.isAdmin = data.user.role === 'admin';
-              this.loginMessage = '';
-              this.currentView = 'home';
-            } else {
-              this.loginMessage = data.message;
-            }
-          } catch (err) {
-            this.loginMessage = 'Chyba při přihlašování.';
-            console.error(err);
-          }
-        },
-        async logout() {
-          try {
-            await fetch('api.php?action=logout');
-            this.user = null;
-            this.isAdmin = false;
-            this.currentView = 'login';
-            this.loginForm.username = '';
-            this.loginForm.password = '';
-          } catch (err) {
-            console.error(err);
-          }
-        },
-        async userRegister() {
-          this.registerMessage = '';
-          const formData = new FormData();
-          formData.append('username', this.newUser.username);
-          formData.append('password', this.newUser.password);
-          formData.append('role', this.newUser.role);
-          try {
-            const response = await fetch('api.php?action=userRegister', { method: 'POST', body: formData });
-            const data = await response.json();
-            this.registerMessage = data.message;
-            if (data.status === 'success') {
-              this.newUser.username = '';
-              this.newUser.password = '';
-              this.newUser.role = 'user';
-              this.fetchUsers();
-            }
-          } catch (err) {
-            this.registerMessage = 'Chyba při registraci: ' + err;
-          }
-        },
-        async fetchUsers() {
-          try {
-            const response = await fetch('api.php?action=listUsers');
-            const data = await response.json();
-            if (data.status === 'success') {
-              this.users = data.data.map(u => ({ ...u, newPassword: '', newUsername: u.username, newRole: u.role }));
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        },
-        async adminUserUpdate(id, newUsername, newRole, newPassword) {
-          this.userUpdateMessage = '';
-          const formData = new FormData();
-          formData.append('id', id);
-          if (newUsername) formData.append('username', newUsername);
-          if (newRole) formData.append('role', newRole);
-          if (newPassword) formData.append('password', newPassword);
-          try {
-            const response = await fetch('api.php?action=adminUserUpdate', { method: 'POST', body: formData });
-            const data = await response.json();
-            this.userUpdateMessage = data.message;
-            if (data.status === 'success') {
-                this.fetchUsers(); // Refresh the list
-            }
-          } catch (err) {
-            this.userUpdateMessage = 'Chyba: ' + err;
-          }
-        },
-        async userChangePassword() {
-            this.passwordChangeMessage = '';
-            if (this.changePasswordForm.password !== this.changePasswordForm.confirmPassword) {
-                this.passwordChangeMessage = 'Hesla se neshodují.';
-                return;
-            }
-            const formData = new FormData();
-            formData.append('password', this.changePasswordForm.password);
-            try {
-                const response = await fetch('api.php?action=userChangePassword', { method: 'POST', body: formData });
-                const data = await response.json();
-                this.passwordChangeMessage = data.message;
-                if (data.status === 'success') {
-                    this.changePasswordForm.password = '';
-                    this.changePasswordForm.confirmPassword = '';
-                }
-            } catch (err) {
-                this.passwordChangeMessage = 'Chyba: ' + err;
-            }
-        },
-        toggleNavbar() { this.isNavbarActive = !this.isNavbarActive; },
-        getRowClass(record) {
-          if (record.stav === 'prijato') return 'prijato-row';
-          if (record.stav === 'zaplaceno') return 'zaplaceno-row';
-          if (record.stav === 'zaslano') return 'zaslano-row';
-          if (record.stav === 'odmitnuto') return 'odmitnuto-row';
-          if (record.stav === 'vychozi prijato') return 'vychozi-row';
-          return '';
-        },
-        formatDate(input) {
-          let d = new Date(input);
-          let day = ("0" + d.getDate()).slice(-2);
-          let month = ("0" + (d.getMonth() + 1)).slice(-2);
-          let year = d.getFullYear().toString().slice(-2);
-          return day + "." + month + "." + year;
-        },
-        createRecord() {
-          if (!this.form.datum) { this.message = 'Vyberte datum.'; return; }
-          let accountRegex = /^\d{4}\/\d{4}$/;
-          if (!accountRegex.test(this.form.ucet)) {
-            this.message = 'Účet musí být ve formátu NNNN/NNNN';
-            return;
-          }
-          if (this.form.nick.trim() === '') this.form.nick = '-';
-          let formattedDate = this.formatDate(this.form.datum);
-          const formData = new FormData();
-          formData.append("datum", formattedDate);
-          formData.append("jmeno", this.form.jmeno);
-          formData.append("ucet", this.form.ucet);
-          formData.append("castka", this.form.castka);
-          formData.append("stav", this.form.stav);
-          formData.append("prani", this.form.prani);
-          formData.append("nick", this.form.nick);
-          formData.append("link", this.form.link);
-          formData.append("faktura", this.form.faktura);
-          fetch('api.php?action=create', { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-              if (data.status === 'success') {
-                this.message = 'Záznam byl uložen, ID: ' + data.id;
-                this.form.jmeno = '';
-                this.form.ucet = '';
-                this.form.castka = '100';
-                this.form.stav = 'zaplaceno';
-                this.form.prani = '';
-                this.form.nick = '';
-                this.form.link = '';
-                this.form.faktura = '';
-                this.fetchRecordCount();
-                this.$nextTick(() => { document.getElementById('jmeno').focus(); });
-              } else {
-                this.message = 'Chyba: ' + data.message;
-              }
-            })
-            .catch(err => {
-              this.message = 'Chyba při odesílání: ' + err;
-              console.error(err);
-            });
-        },
-        fetchDaily() {
-          if (!this.dailyDate) this.dailyDate = new Date().toISOString().slice(0, 10);
-          let formattedDate = this.formatDate(this.dailyDate);
-          fetch('api.php?action=daily&date=' + encodeURIComponent(formattedDate))
-            .then(response => response.json())
-            .then(data => {
-              if (data.status === 'success') {
-                this.dailyRecords = data.data.map(record => { record.dirty = false; return record; });
-                this.dailyCurrentPage = 1;
-              } else { alert(data.message); }
-            })
-            .catch(err => console.error(err));
-        },
-        fetchMonthly() {
-          if (!this.monthly.month || !this.monthly.year) return;
-          const url = `api.php?action=monthly&month=${this.monthly.month}&year=${this.monthly.year}`;
-          fetch(url)
-            .then(response => response.json())
-            .then(data => {
-              if (data.status === 'success') {
-                this.monthlyRecords = data.data;
-                this.monthlyTotal = data.total;
-              } else { alert(data.message); }
-            })
-            .catch(err => console.error(err));
-        },
-        fetchYearly() {
-            if (!this.yearly.year) return;
-            const url = `api.php?action=yearly&year=${this.yearly.year}`;
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        this.yearlyRecords = data.data;
-                        this.yearlyTotal = data.total;
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(err => console.error(err));
-        },
-        updateStatus(record) {
-          const formData = new FormData();
-          formData.append("id", record.id);
-          formData.append("stav", record.stav);
-          fetch('api.php?action=updateStatus', { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-              this.message = (data.status === 'success') ? 'Status byl aktualizován.' : 'Chyba při aktualizaci: ' + data.message;
-            })
-            .catch(err => {
-              this.message = 'Chyba při aktualizaci: ' + err;
-              console.error(err);
-            });
-        },
-        updateRecord(record) {
-          if (confirm("Chcete uložit změny v polích Přání, Nick, Link a Faktura?")) {
-            const formData = new FormData();
-            formData.append("id", record.id);
-            formData.append("prani", record.prani);
-            formData.append("nick", record.nick);
-            formData.append("link", record.link);
-            formData.append("faktura", record.faktura);
-            fetch('api.php?action=updateRecord', { method: 'POST', body: formData })
-              .then(response => response.json())
-              .then(data => {
-                this.message = (data.status === 'success') ? "Záznam byl aktualizován." : "Chyba při aktualizaci: " + data.message;
-                if (data.status === 'success') record.dirty = false;
-              })
-              .catch(err => {
-                this.message = "Chyba při aktualizaci: " + err;
-                console.error(err);
-              });
-          }
-        },
-        expandTextarea(e) { e.target.setAttribute('rows', '8'); e.target.setAttribute('cols', '120'); },
-        shrinkTextarea(e) { e.target.setAttribute('rows', '2'); e.target.setAttribute('cols', '120'); },
-        formatUcet(e) {
-          let value = this.form.ucet;
-          if (value.length === 4 && value.indexOf('/') === -1) { this.form.ucet = value + '/'; }
-          if (value.length > 9) { this.form.ucet = value.slice(0, 9); }
-        },
-        openInstagram(record) {
-          if(record.nick && record.nick.trim() !== "-") { window.open("https://ig.me/m/" + record.nick, '_blank'); } else { alert("Nick není zadán."); }
-        },
-        printRecord(record) {
-          let printWindow = window.open('', '_blank', 'width=1280,height=720,top=180,left=320');
-          let linkHtml = "";
-          if (record.link && record.link.trim() !== "") {
-            linkHtml = `<div class="record-detail">
-                          <strong>Link:</strong>
-                          <a href="${record.link}" target="_blank">Video na přání - ${record.id}</a>
+                <div class="table-actions">
+                    <button id="print-table" class="btn btn-secondary">
+                        <i class="fas fa-print"></i>
+                        Tisknout
+                    </button>
+                </div>
+            </section>
+
+            <!-- Nový zápis -->
+            <section id="new-record-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-plus"></i> Nový zápis</h2>
+                </div>
+
+                <form id="new-record-form" class="form-grid">
+                    <div class="form-group">
+                        <label for="new-datum">Datum *</label>
+                        <input type="date" id="new-datum" name="datum" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-jmeno">Jméno *</label>
+                        <input type="text" id="new-jmeno" name="jmeno" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-ucet">Účet</label>
+                        <input type="text" id="new-ucet" name="ucet">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-castka">Částka</label>
+                        <input type="number" id="new-castka" name="castka" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-stav">Stav</label>
+                        <select id="new-stav" name="stav">
+                            <option value="rozpracovane">Rozpracované</option>
+                            <option value="zaslano">Zasláno</option>
+                            <option value="zaplaceno">Zaplaceno</option>
+                            <option value="odmitnuto">Odmítnuto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-nick">Nick</label>
+                        <input type="text" id="new-nick" name="nick">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="new-prani">Přání</label>
+                        <textarea id="new-prani" name="prani" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-link">Link</label>
+                        <input type="url" id="new-link" name="link">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-faktura">Faktura</label>
+                        <input type="text" id="new-faktura" name="faktura">
+                    </div>
+                    <div class="form-actions full-width">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Uložit záznam
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-undo"></i>
+                            Vyčistit formulář
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Měsíční přehled -->
+            <section id="monthly-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Měsíční přehled</h2>
+                    <div class="date-selectors">
+                        <select id="monthly-year">
+                            <!-- Years will be populated by JS -->
+                        </select>
+                        <select id="monthly-month">
+                            <option value="1">Leden</option>
+                            <option value="2">Únor</option>
+                            <option value="3">Březen</option>
+                            <option value="4">Duben</option>
+                            <option value="5">Květen</option>
+                            <option value="6">Červen</option>
+                            <option value="7">Červenec</option>
+                            <option value="8">Srpen</option>
+                            <option value="9">Září</option>
+                            <option value="10">Říjen</option>
+                            <option value="11">Listopad</option>
+                            <option value="12">Prosinec</option>
+                        </select>
+                        <button id="load-monthly" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                            Načíst přehled
+                        </button>
+                    </div>
+                </div>
+
+                <div id="monthly-overview" class="overview-container">
+                    <div class="overview-cards">
+                        <!-- Cards will be populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Roční přehled -->
+            <section id="yearly-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Roční přehled</h2>
+                    <div class="date-selectors">
+                        <select id="yearly-year">
+                            <!-- Years will be populated by JS -->
+                        </select>
+                        <button id="load-yearly" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                            Načíst přehled
+                        </button>
+                    </div>
+                </div>
+
+                <div id="yearly-overview" class="overview-container">
+                    <div class="yearly-table-container">
+                        <!-- Table will be populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Import/Export -->
+            <section id="import-export-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-exchange-alt"></i> Import/Export</h2>
+                </div>
+
+                <div class="import-export-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-download"></i> Export do CSV</h3>
+                        <div class="form-group">
+                            <label for="export-datum-od">Datum od</label>
+                            <input type="date" id="export-datum-od">
                         </div>
-                        <div class="record-detail">
-                          <strong>Adresa:</strong> ${record.link}
-                        </div>`;
-          }
-          let fakturaHtml = "";
-          if (record.faktura && record.faktura.trim() !== "") {
-            fakturaHtml = `<div class="record-detail">
-                             <strong>Faktura:</strong>
-                             <a href="${record.faktura}" target="_blank">Faktura - ${record.id}</a>
-                           </div>
-                           <div class="record-detail">
-                             <strong>Adresa faktury:</strong> ${record.faktura}
-                           </div>`;
-          }
-          let nickHtml = `<div class="record-detail"><strong>Nick:</strong> <a href="https://ig.me/m/${record.nick}" target="_blank">${record.nick}</a></div>`;
-          
-          printWindow.document.write(`
-            <html>
-              <head>
-                <title>Tisk záznamu ${record.id}</title>
-                <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" rel="stylesheet">
-                <style>
-                  body { font-family: Arial, sans-serif; margin: 20px; }
-                  h2 { text-align: center; }
-                  .record-detail { margin-bottom: 10px; font-size: 24px; }
-                  .record-detail strong { display: inline-block; width: 150px; }
-                  .prani-box { border: 1px solid #000; padding: 10px; margin: 10px auto; text-align: center; width: 80%; font-size: 24px; }
-                </style>
-              </head>
-              <body>
-                <h2>Detail záznamu</h2>
-                <div class="record-detail"><strong>ID:</strong> ${record.id}</div>
-                <div class="record-detail"><strong>Datum:</strong> ${record.datum_formatted}</div>
-                <div class="record-detail"><strong>Jméno:</strong> ${record.jmeno}</div>
-                <div class="record-detail"><strong>Účet:</strong> ${record.ucet}</div>
-                <div class="record-detail"><strong>Částka:</strong> ${record.castka}</div>
-                <div class="record-detail"><strong>Stav:</strong> ${record.stav}</div>
-                <div class="record-detail"><strong>Přání:</strong></div>
-                <div class="prani-box">${record.prani}</div>
-                ${nickHtml}
-                ${linkHtml}
-                ${fakturaHtml}
-                <div class="record-detail"><strong>Znacka:</strong> ${record.znacka}</div>
-              </body>
-            </html>
-          `);
-          printWindow.document.close();
-        },
-        fetchRecordCount() {
-          fetch('api.php?action=list&page=1')
-            .then(response => response.json())
-            .then(data => {
-              this.recordCount = (data.status === 'success') ? data.total : 0;
-            })
-            .catch(err => {
-              console.error(err);
-              this.recordCount = 0;
-            });
-        },
-        markDirty(record) { record.dirty = true; },
-        hasUnsavedChanges() { return this.dailyRecords.some(record => record.dirty); },
-        hasUnsavedFormData() {
-          return this.currentView === 'new' && (
-            this.form.datum || this.form.jmeno || this.form.ucet || this.form.castka || this.form.prani || (this.form.nick && this.form.nick !== '-')
-          );
-        },
-        switchView(newView) {
-          if ((this.currentView === 'daily' && this.hasUnsavedChanges()) || this.hasUnsavedFormData()) {
-            if (!confirm("Máte neuložené změny, které mohou být při obnovení ztraceny. Opravdu chcete odejít?")) return;
-          }
-          this.currentView = newView;
-          if (newView === 'userManagement') {
-            this.fetchUsers();
-          }
-        },
-        beforeUnloadHandler(event) {
-          if (this.hasUnsavedChanges() || this.hasUnsavedFormData()) {
-            event.preventDefault();
-            event.returnValue = '';
-          }
-        },
-        importDatabase() {
-          let fileInput = this.$refs.importFile;
-          if (fileInput.files.length === 0) { this.importMessage = "Vyberte soubor k importu."; return; }
-          let file = this.$refs.importFile.files[0];
-          let formData = new FormData();
-          formData.append("importFile", file);
-          formData.append("importMode", this.importMode);
-          fetch('api.php?action=import', { method: 'POST', body: formData })
-            .then(response => response.text())
-            .then(text => {
-              try {
-                const data = JSON.parse(text);
-                this.importMessage = (data.status === 'success') ? "Import proběhl úspěšně: " + data.message : "Chyba při importu: " + data.message;
-              } catch (err) {
-                this.importMessage = "Chyba: Server nevrátil validní JSON. Zkontrolujte stav databáze.";
-              }
-            })
-            .catch(err => { this.importMessage = "Chyba při importu: " + err; console.error(err); });
-        },
-        prevPage() { if (this.dailyCurrentPage > 1) this.dailyCurrentPage--; },
-        nextPage() { if (this.dailyCurrentPage < this.totalDailyPages) this.dailyCurrentPage++; },
-        getBrowserName() {
-          let ua = navigator.userAgent;
-          if (ua.indexOf("Chrome") > -1 && ua.indexOf("Edge") === -1) return "Chrome";
-          else if (ua.indexOf("Firefox") > -1) return "Firefox";
-          else if (ua.indexOf("Safari") > -1 && ua.indexOf("Chrome") === -1) return "Safari";
-          else if (ua.indexOf("Edge") > -1) return "Edge";
-          else return "Unknown";
-        },
-        retrieveLocalIP() {
-          var localIPs = {};
-          var ipRegex = /([0-9]{1,3}(?:\.[0-9]{1,3}){3})/g;
-          var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-          if (!RTCPeerConnection) { this.localIP = 'Not available'; return; }
-          var pc = new RTCPeerConnection({ iceServers: [] });
-          pc.createDataChannel("");
-          pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(err => console.error(err));
-          pc.onicecandidate = (ice) => {
-            if (!ice || !ice.candidate || !ice.candidate.candidate) return;
-            var candidate = ice.candidate.candidate;
-            var match = candidate.match(ipRegex);
-            if (match) {
-              match.forEach(ip => {
-                if (!localIPs[ip]) {
-                  localIPs[ip] = true;
-                  this.localIP = Object.keys(localIPs).join(", ");
-                }
-              });
-            }
-          };
-        },
-        getDeviceType() {
-          const ua = navigator.userAgent.toLowerCase();
-          if (/mobi/i.test(ua)) { return "Mobil"; } else if (/tablet|ipad/i.test(ua)) { return "Tablet"; } else if (window.innerWidth < 1280) { return "Notebook"; } else if (window.innerWidth >= 1280) { return "PC"; } else { return "Jiné"; }
-        }
-      },
-      watch: {
-        dailyFilter: { handler() { this.dailyCurrentPage = 1; }, deep: true },
-        currentView(newVal) { if(newVal === 'new') this.fetchRecordCount(); }
-      },
-      mounted() {
-        this.checkSession();
-        this.browserName = this.getBrowserName();
-        this.resolution = window.innerWidth + "x" + window.innerHeight;
-        this.userAgent = navigator.userAgent;
-        let navEntries = performance.getEntriesByType("navigation");
-        if (navEntries && navEntries.length > 0) {
-          this.renderTime = navEntries[0].loadEventEnd - navEntries[0].startTime;
-        } else {
-          this.renderTime = performance.timing.domComplete - performance.timing.navigationStart;
-        }
-        this.deviceType = this.getDeviceType();
-        this.retrieveLocalIP();
-        window.addEventListener('beforeunload', this.beforeUnloadHandler);
-      },
-      destroyed() {
-        window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-      }
-    });
-  </script>
+                        <div class="form-group">
+                            <label for="export-datum-do">Datum do</label>
+                            <input type="date" id="export-datum-do">
+                        </div>
+                        <button id="export-csv" class="btn btn-primary">
+                            <i class="fas fa-file-export"></i>
+                            Exportovat CSV
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <h3><i class="fas fa-upload"></i> Import z CSV</h3>
+                        <div class="form-group">
+                            <label for="import-file">Vyberte CSV soubor</label>
+                            <input type="file" id="import-file" accept=".csv">
+                        </div>
+                        <button id="import-csv" class="btn btn-primary">
+                            <i class="fas fa-file-import"></i>
+                            Importovat CSV
+                        </button>
+                        <div class="help-text">
+                            <small>Formát CSV: Datum;Jméno;Účet;Částka;Stav;Přání;Nick;Link;Faktura</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Správa uživatelů -->
+            <section id="users-section" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> Správa uživatelů</h2>
+                    <button id="add-user-btn" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Přidat uživatele
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table id="users-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Uživatelské jméno</th>
+                                <th>Role</th>
+                                <th>Vytvořeno</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal pro editaci záznamu -->
+    <div id="edit-record-modal" class="modal">
+        <div class="modal-content modal-edit">
+            <div class="modal-header">
+                <h3>Editace záznamu</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="edit-record-form" class="form-grid">
+                <input type="hidden" id="edit-record-id" name="id">
+                <div class="form-group">
+                    <label for="edit-datum">Datum *</label>
+                    <input type="date" id="edit-datum" name="datum" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-jmeno">Jméno *</label>
+                    <input type="text" id="edit-jmeno" name="jmeno" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-ucet">Účet</label>
+                    <input type="text" id="edit-ucet" name="ucet">
+                </div>
+                <div class="form-group">
+                    <label for="edit-castka">Částka</label>
+                    <input type="number" id="edit-castka" name="castka" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="edit-stav">Stav</label>
+                    <select id="edit-stav" name="stav">
+                        <option value="rozpracovane">Rozpracované</option>
+                        <option value="zaslano">Zasláno</option>
+                        <option value="zaplaceno">Zaplaceno</option>
+                        <option value="odmitnuto">Odmítnuto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-nick">Nick</label>
+                    <input type="text" id="edit-nick" name="nick">
+                </div>
+                <div class="form-group full-width">
+                    <label for="edit-prani">Přání</label>
+                    <textarea id="edit-prani" name="prani" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-link">Link</label>
+                    <input type="url" id="edit-link" name="link">
+                </div>
+                <div class="form-group">
+                    <label for="edit-faktura">Faktura</label>
+                    <input type="text" id="edit-faktura" name="faktura">
+                </div>
+                <div class="form-actions full-width">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Uložit změny
+                    </button>
+                    <button type="button" class="btn btn-secondary close-modal">
+                        <i class="fas fa-times"></i>
+                        Zrušit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal pro přidání/editaci uživatele -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="user-modal-title">Přidat uživatele</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="user-form">
+                <input type="hidden" id="user-id" name="id">
+                <div class="form-group">
+                    <label for="user-username">Uživatelské jméno *</label>
+                    <input type="text" id="user-username" name="username" required>
+                </div>
+                <div class="form-group" id="password-group">
+                    <label for="user-password">Heslo *</label>
+                    <input type="password" id="user-password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Role</label>
+                    <select id="user-role" name="role">
+                        <option value="user">Uživatel</option>
+                        <option value="admin">Administrátor</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Uložit
+                    </button>
+                    <button type="button" class="btn btn-secondary close-modal">
+                        <i class="fas fa-times"></i>
+                        Zrušit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal pro změnu hesla -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Změna hesla</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="password-form">
+                <input type="hidden" id="password-user-id" name="user_id">
+                <div class="form-group">
+                    <label for="new-password">Nové heslo *</label>
+                    <input type="password" id="new-password" name="new_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Potvrzení hesla *</label>
+                    <input type="password" id="confirm-password" name="confirm_password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Změnit heslo
+                    </button>
+                    <button type="button" class="btn btn-secondary close-modal">
+                        <i class="fas fa-times"></i>
+                        Zrušit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal pro detailní zobrazení záznamu -->
+    <div id="record-detail-modal" class="modal">
+        <div class="modal-content modal-detail">
+            <div class="modal-header">
+                <h3>Detailní zobrazení záznamu</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div id="record-detail-content" class="record-detail-content">
+                <!-- Content will be populated by JS -->
+            </div>
+            <div class="modal-actions">
+                <button id="print-detail" class="btn btn-primary">
+                    <i class="fas fa-print"></i>
+                    Tisknout
+                </button>
+                <button type="button" class="btn btn-secondary close-modal">
+                    <i class="fas fa-times"></i>
+                    Zavřít
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="notifications"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>

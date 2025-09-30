@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení - Evidence přání</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+        }
+
+        .login-content {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,123,255,0.4);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .demo-accounts {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .demo-accounts h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .demo-account {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔐 Přihlášení</h1>
+            <p>Evidence přání videií</p>
+        </div>
+
+        <div class="login-content">
+            <div id="message"></div>
+
+            <div class="demo-accounts">
+                <h4>👤 Testovací účty:</h4>
+                <div class="demo-account">
+                    <strong>Admin:</strong> admin / [vaše zadané heslo]
+                </div>
+                <div class="demo-account">
+                    <strong>Uživatel:</strong> user / password
+                </div>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Uživatelské jméno</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Heslo</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn">Přihlásit se</button>
+            </form>
+
+            <div class="login-footer">
+                Po přihlášení budete přesměrováni na hlavní aplikaci
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch('./api.php?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageDiv.innerHTML = '<div class="alert alert-success">Přihlášení úspěšné! Přesměrovávám...</div>';
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    messageDiv.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="alert alert-error">Chyba při přihlašování. Zkuste to znovu.</div>';
+                console.error('Login error:', error);
+            }
+        });
+
+        // Automatické vyplnění pro demo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Možnost rychlého přihlášení pomocí URL parametrů
+            const urlParams = new URLSearchParams(window.location.search);
+            const user = urlParams.get('user');
+            
+            if (user === 'admin') {
+                document.getElementById('username').value = 'admin';
+                document.getElementById('password').focus();
+            } else if (user === 'user') {
+                document.getElementById('username').value = 'user';
+                document.getElementById('password').value = 'password';
+            }
+        });
+    </script>
+</body>
+</html>

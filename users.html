@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa uživatelů - Evidence přání</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .header .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .header .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #218838);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .role-badge.admin {
+            background: #dc3545;
+            color: white;
+        }
+
+        .role-badge.user {
+            background: #007bff;
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .actions .btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: "⏳";
+            font-size: 2rem;
+            display: block;
+            margin-top: 10px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👥 Správa uživatelů</h1>
+            <div class="nav-links">
+                <a href="index.html">📊 Hlavní aplikace</a>
+                <a href="test_kompletni.html">🔍 Testování</a>
+                <a href="#" onclick="logout()">🚪 Odhlásit</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="message"></div>
+
+            <!-- Seznam uživatelů -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Seznam uživatelů</h2>
+                    <button class="btn btn-success" onclick="showAddUserModal()">
+                        ➕ Přidat uživatele
+                    </button>
+                </div>
+
+                <div id="users-loading" class="loading" style="display: none;">Načítám uživatele...</div>
+                
+                <div class="table-wrapper">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Uživatelské jméno</th>
+                                <th>Role</th>
+                                <th>Vytvořen</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Data se načtou pomocí JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro přidání/úpravu uživatele -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('user-modal')">&times;</span>
+            <h3 id="user-modal-title">Přidat uživatele</h3>
+            <form id="user-form">
+                <input type="hidden" id="user-id" name="user-id">
+                
+                <div class="form-group">
+                    <label for="username">Uživatelské jméno *</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group" id="password-group">
+                    <label for="password">Heslo *</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="user">Uživatel</option>
+                        <option value="admin">Administrátor</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 25px;">
+                    <button type="button" class="btn btn-warning" onclick="closeModal('user-modal')">
+                        Zrušit
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Uložit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal pro změnu hesla -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('password-modal')">&times;</span>
+            <h3>Změna hesla</h3>
+            <form id="password-form">
+                <input type="hidden" id="password-user-id" name="user-id">
+                
+                <div class="form-group">
+                    <label for="new-password">Nové heslo *</label>
+                    <input type="password" id="new-password" name="new-password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Potvrzení hesla *</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 25px;">
+                    <button type="button" class="btn btn-warning" onclick="closeModal('password-modal')">
+                        Zrušit
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Změnit heslo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API volání
+        async function apiCall(action, data = null, method = 'GET', urlParams = null) {
+            try {
+                let url = `./api.php?action=${action}`;
+                
+                // Přidání URL parametrů
+                if (urlParams) {
+                    const params = new URLSearchParams(urlParams);
+                    url += '&' + params.toString();
+                }
+                
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (method === 'GET' && data) {
+                    const params = new URLSearchParams(data);
+                    url += '&' + params.toString();
+                } else if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(url, options);
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message);
+                }
+
+                return result;
+            } catch (error) {
+                showMessage(error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Zobrazení zpráv
+        function showMessage(message, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Načtení uživatelů
+        async function loadUsers() {
+            try {
+                document.getElementById('users-loading').style.display = 'block';
+                const result = await apiCall('get-users');
+                
+                const tbody = document.getElementById('users-tbody');
+                tbody.innerHTML = '';
+
+                result.data.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td><span class="role-badge ${user.role}">${user.role === 'admin' ? 'Administrátor' : 'Uživatel'}</span></td>
+                        <td>${formatDate(user.created_at)}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="editUser(${user.id}, '${user.username}', '${user.role}')">
+                                    ✏️ Upravit
+                                </button>
+                                <button class="btn btn-warning" onclick="changePassword(${user.id})">
+                                    🔑 Heslo
+                                </button>
+                                ${user.id !== 1 ? `<button class="btn btn-danger" onclick="deleteUser(${user.id}, '${user.username}')">🗑️ Smazat</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Chyba při načítání uživatelů:', error);
+            } finally {
+                document.getElementById('users-loading').style.display = 'none';
+            }
+        }
+
+        // Formátování data
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('cs-CZ') + ' ' + date.toLocaleTimeString('cs-CZ');
+        }
+
+        // Modály
+        function showAddUserModal() {
+            document.getElementById('user-modal-title').textContent = 'Přidat uživatele';
+            document.getElementById('user-form').reset();
+            document.getElementById('user-id').value = '';
+            document.getElementById('password-group').style.display = 'block';
+            document.getElementById('password').required = true;
+            document.getElementById('user-modal').style.display = 'block';
+        }
+
+        function editUser(id, username, role) {
+            document.getElementById('user-modal-title').textContent = 'Upravit uživatele';
+            document.getElementById('user-id').value = id;
+            document.getElementById('username').value = username;
+            document.getElementById('role').value = role;
+            document.getElementById('password-group').style.display = 'none';
+            document.getElementById('password').required = false;
+            document.getElementById('user-modal').style.display = 'block';
+        }
+
+        function changePassword(userId) {
+            document.getElementById('password-user-id').value = userId;
+            document.getElementById('password-form').reset();
+            document.getElementById('password-modal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Formuláře
+        document.getElementById('user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const userId = formData.get('user-id');
+            const username = formData.get('username');
+            const password = formData.get('password');
+            const role = formData.get('role');
+
+            try {
+                if (userId) {
+                    // Úprava uživatele
+                    await apiCall('update-user', { username, role }, 'POST', { id: userId });
+                    showMessage('Uživatel byl úspěšně upraven', 'success');
+                } else {
+                    // Vytvoření uživatele
+                    if (!password) {
+                        showMessage('Heslo je povinné pro nového uživatele', 'error');
+                        return;
+                    }
+                    await apiCall('create-user', { username, password, role }, 'POST');
+                    showMessage('Uživatel byl úspěšně vytvořen', 'success');
+                }
+                
+                closeModal('user-modal');
+                loadUsers();
+            } catch (error) {
+                console.error('Chyba při ukládání uživatele:', error);
+            }
+        });
+
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const userId = formData.get('user-id');
+            const newPassword = formData.get('new-password');
+            const confirmPassword = formData.get('confirm-password');
+
+            if (newPassword !== confirmPassword) {
+                showMessage('Hesla se neshodují', 'error');
+                return;
+            }
+
+            try {
+                await apiCall('change-password', { user_id: userId, new_password: newPassword }, 'POST');
+                showMessage('Heslo bylo úspěšně změněno', 'success');
+                closeModal('password-modal');
+            } catch (error) {
+                console.error('Chyba při změně hesla:', error);
+            }
+        });
+
+        // Smazání uživatele
+        async function deleteUser(userId, username) {
+            if (confirm(`Opravdu chcete smazat uživatele "${username}"?`)) {
+                try {
+                    await apiCall('delete-user', null, 'POST', { id: userId });
+                    showMessage('Uživatel byl úspěšně smazán', 'success');
+                    loadUsers();
+                } catch (error) {
+                    console.error('Chyba při mazání uživatele:', error);
+                }
+            }
+        }
+
+        // Odhlášení
+        async function logout() {
+            try {
+                await apiCall('logout', null, 'POST');
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Chyba při odhlašování:', error);
+            }
+        }
+
+        // Kontrola přihlášení při načtení stránky
+        async function checkAuth() {
+            try {
+                const result = await apiCall('check-session');
+                if (!result.data || result.data.role !== 'admin') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                loadUsers();
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Inicializace
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            // Zavření modálu při kliknutí mimo
+            window.onclick = function(event) {
+                const userModal = document.getElementById('user-modal');
+                const passwordModal = document.getElementById('password-modal');
+                
+                if (event.target === userModal) {
+                    userModal.style.display = 'none';
+                }
+                if (event.target === passwordModal) {
+                    passwordModal.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

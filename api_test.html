@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Suite - Evidence přání videií v3.2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 800px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 20px;
+        }
+
+        .test-category {
+            margin-bottom: 25px;
+        }
+
+        .test-category h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+            font-size: 1.1em;
+        }
+
+        .test-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .test-btn:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateX(5px);
+        }
+
+        .test-btn.active {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+
+        .test-btn.success {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .test-btn.error {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .test-section {
+            display: none;
+        }
+
+        .test-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #2196f3;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .response-area {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .response-area h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .response-content {
+            background: #2c3e50;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: #ecf0f1;
+            border-top: 1px solid #bdc3c7;
+        }
+
+        .status-info {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .run-all-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .run-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-indicator {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .error-indicator {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e8ebf0 100%);
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .test-success .stat-number {
+            color: #4caf50;
+        }
+
+        .test-failed .stat-number {
+            color: #f44336;
+        }
+
+        .test-total .stat-number {
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 API Test Suite</h1>
+            <p>Kompletní testování Evidence přání videií API v3.2.0</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <!-- Autentifikace -->
+                <div class="test-category">
+                    <h3>🔐 Autentifikace</h3>
+                    <button class="test-btn" data-test="login">Přihlášení</button>
+                    <button class="test-btn" data-test="check-session">Kontrola relace</button>
+                    <button class="test-btn" data-test="logout">Odhlášení</button>
+                </div>
+
+                <!-- Záznamy -->
+                <div class="test-category">
+                    <h3>📝 Záznamy</h3>
+                    <button class="test-btn" data-test="get-records">Načtení záznamů</button>
+                    <button class="test-btn" data-test="create-record">Vytvoření záznamu</button>
+                    <button class="test-btn" data-test="update-record">Úprava záznamu</button>
+                    <button class="test-btn" data-test="delete-record">Smazání záznamu</button>
+                </div>
+
+                <!-- Přehledy -->
+                <div class="test-category">
+                    <h3>📊 Přehledy</h3>
+                    <button class="test-btn" data-test="monthly-overview">Měsíční přehled</button>
+                    <button class="test-btn" data-test="monthly-detail">Měsíční detail</button>
+                    <button class="test-btn" data-test="yearly-overview">Roční přehled</button>
+                </div>
+
+                <!-- Import/Export -->
+                <div class="test-category">
+                    <h3>💾 Import/Export</h3>
+                    <button class="test-btn" data-test="export-csv">Export CSV</button>
+                    <button class="test-btn" data-test="import-csv">Import CSV</button>
+                </div>
+
+                <!-- Uživatelé -->
+                <div class="test-category">
+                    <h3>👥 Uživatelé</h3>
+                    <button class="test-btn" data-test="get-users">Seznam uživatelů</button>
+                    <button class="test-btn" data-test="create-user">Vytvoření uživatele</button>
+                    <button class="test-btn" data-test="update-user">Úprava uživatele</button>
+                    <button class="test-btn" data-test="change-password">Změna hesla</button>
+                    <button class="test-btn" data-test="delete-user">Smazání uživatele</button>
+                </div>
+
+                <!-- Dashboard -->
+                <div class="test-category">
+                    <h3>📊 Dashboard</h3>
+                    <button class="test-btn" data-test="dashboard-stats">Dashboard statistiky</button>
+                </div>
+
+                <!-- Audit Log -->
+                <div class="test-category">
+                    <h3>🔒 Audit Log</h3>
+                    <button class="test-btn" data-test="get-audit-logs">Načtení audit logů</button>
+                    <button class="test-btn" data-test="audit-statistics">Audit statistiky</button>
+                    <button class="test-btn" data-test="export-audit-csv">Export audit CSV</button>
+                    <button class="test-btn" data-test="cleanup-audit-logs">Vymazání starých logů</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="summary-stats">
+                    <div class="stat-item test-total">
+                        <div class="stat-number" id="total-tests">0</div>
+                        <div class="stat-label">Celkem testů</div>
+                    </div>
+                    <div class="stat-item test-success">
+                        <div class="stat-number" id="passed-tests">0</div>
+                        <div class="stat-label">Úspěšných</div>
+                    </div>
+                    <div class="stat-item test-failed">
+                        <div class="stat-number" id="failed-tests">0</div>
+                        <div class="stat-label">Neúspěšných</div>
+                    </div>
+                </div>
+
+                <!-- Login Test -->
+                <div class="test-section" id="login-section">
+                    <h2>🔐 Test přihlášení</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Uživatelské jméno:</label>
+                            <input type="text" id="login-username" value="admin">
+                        </div>
+                        <div class="form-group">
+                            <label>Heslo:</label>
+                            <input type="password" id="login-password" value="password">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testLogin()">🚀 Testovat přihlášení</button>
+                    <div class="response-area" id="login-response" style="display: none;"></div>
+                </div>
+
+                <!-- Check Session Test -->
+                <div class="test-section" id="check-session-section">
+                    <h2>🔍 Test kontroly relace</h2>
+                    <p>Zkontroluje aktuální stav přihlášení uživatele.</p>
+                    <button class="btn btn-primary" onclick="testCheckSession()">🚀 Testovat kontrolu relace</button>
+                    <div class="response-area" id="check-session-response" style="display: none;"></div>
+                </div>
+
+                <!-- Logout Test -->
+                <div class="test-section" id="logout-section">
+                    <h2>🚪 Test odhlášení</h2>
+                    <p>Odhlásí aktuálně přihlášeného uživatele.</p>
+                    <button class="btn btn-danger" onclick="testLogout()">🚀 Testovat odhlášení</button>
+                    <div class="response-area" id="logout-response" style="display: none;"></div>
+                </div>
+
+                <!-- Get Records Test -->
+                <div class="test-section" id="get-records-section">
+                    <h2>📋 Test načtení záznamů</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Stránka:</label>
+                            <input type="number" id="records-page" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Stav:</label>
+                            <select id="records-stav">
+                                <option value="">Všechny</option>
+                                <option value="zaplaceno">Zaplaceno</option>
+                                <option value="zaslano">Zasláno</option>
+                                <option value="odmitnuto">Odmítnuto</option>
+                                <option value="rozpracovane">Rozpracované</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Nick:</label>
+                            <input type="text" id="records-nick" placeholder="Část nicku">
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Přání:</label>
+                            <input type="text" id="records-prani" placeholder="Část textu přání">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testGetRecords()">🚀 Testovat načtení</button>
+                    <div class="response-area" id="get-records-response" style="display: none;"></div>
+                </div>
+
+                <!-- Create Record Test -->
+                <div class="test-section" id="create-record-section">
+                    <h2>➕ Test vytvoření záznamu</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Datum:</label>
+                            <input type="date" id="create-datum" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>Jméno:</label>
+                            <input type="text" id="create-jmeno" value="Test Uživatel">
+                        </div>
+                        <div class="form-group">
+                            <label>Účet:</label>
+                            <input type="text" id="create-ucet" value="test-ucet">
+                        </div>
+                        <div class="form-group">
+                            <label>Částka:</label>
+                            <input type="number" id="create-castka" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Stav:</label>
+                            <select id="create-stav">
+                                <option value="rozpracovane">Rozpracované</option>
+                                <option value="zaplaceno">Zaplaceno</option>
+                                <option value="zaslano">Zasláno</option>
+                                <option value="odmitnuto">Odmítnuto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nick:</label>
+                            <input type="text" id="create-nick" value="testnick">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Přání:</label>
+                            <textarea id="create-prani" rows="3" placeholder="Popis přání...">Test přání vytvořené přes API test</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Link:</label>
+                            <input type="url" id="create-link" value="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Faktura:</label>
+                            <input type="text" id="create-faktura" value="F2025001">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="testCreateRecord()">🚀 Testovat vytvoření</button>
+                    <div class="response-area" id="create-record-response" style="display: none;"></div>
+                </div>
+
+                <!-- Update Record Test -->
+                <div class="test-section" id="update-record-section">
+                    <h2>✏️ Test úpravy záznamu</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>ID záznamu:</label>
+                            <input type="number" id="update-id" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Nové jméno:</label>
+                            <input type="text" id="update-jmeno" value="Upravený Uživatel">
+                        </div>
+                        <div class="form-group">
+                            <label>Nový stav:</label>
+                            <select id="update-stav">
+                                <option value="rozpracovane">Rozpracované</option>
+                                <option value="zaplaceno">Zaplaceno</option>
+                                <option value="zaslano">Zasláno</option>
+                                <option value="odmitnuto">Odmítnuto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nová částka:</label>
+                            <input type="number" id="update-castka" value="200" step="0.01">
+                        </div>
+                    </div>
+                    <button class="btn btn-warning" onclick="testUpdateRecord()">🚀 Testovat úpravu</button>
+                    <div class="response-area" id="update-record-response" style="display: none;"></div>
+                </div>
+
+                <!-- Delete Record Test -->
+                <div class="test-section" id="delete-record-section">
+                    <h2>🗑️ Test smazání záznamu</h2>
+                    <div class="form-group">
+                        <label>ID záznamu ke smazání:</label>
+                        <input type="number" id="delete-id" value="1" min="1">
+                    </div>
+                    <button class="btn btn-danger" onclick="testDeleteRecord()">🚀 Testovat smazání</button>
+                    <div class="response-area" id="delete-record-response" style="display: none;"></div>
+                </div>
+
+                <!-- Monthly Overview Test -->
+                <div class="test-section" id="monthly-overview-section">
+                    <h2>📅 Test měsíčního přehledu</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Rok:</label>
+                            <input type="number" id="monthly-year" value="2025" min="2020" max="2030">
+                        </div>
+                        <div class="form-group">
+                            <label>Měsíc:</label>
+                            <select id="monthly-month">
+                                <option value="1">Leden</option>
+                                <option value="2">Únor</option>
+                                <option value="3">Březen</option>
+                                <option value="4">Duben</option>
+                                <option value="5">Květen</option>
+                                <option value="6">Červen</option>
+                                <option value="7">Červenec</option>
+                                <option value="8">Srpen</option>
+                                <option value="9" selected>Září</option>
+                                <option value="10">Říjen</option>
+                                <option value="11">Listopad</option>
+                                <option value="12">Prosinec</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testMonthlyOverview()">🚀 Testovat měsíční přehled</button>
+                    <div class="response-area" id="monthly-overview-response" style="display: none;"></div>
+                </div>
+
+                <!-- Monthly Detail Test -->
+                <div class="test-section" id="monthly-detail-section">
+                    <h2>📊 Test detailního měsíčního přehledu</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Rok:</label>
+                            <input type="number" id="monthly-detail-year" value="2025" min="2020" max="2030">
+                        </div>
+                        <div class="form-group">
+                            <label>Měsíc:</label>
+                            <select id="monthly-detail-month">
+                                <option value="1">Leden</option>
+                                <option value="2">Únor</option>
+                                <option value="3">Březen</option>
+                                <option value="4">Duben</option>
+                                <option value="5">Květen</option>
+                                <option value="6">Červen</option>
+                                <option value="7">Červenec</option>
+                                <option value="8">Srpen</option>
+                                <option value="9" selected>Září</option>
+                                <option value="10">Říjen</option>
+                                <option value="11">Listopad</option>
+                                <option value="12">Prosinec</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testMonthlyDetail()">🚀 Testovat detailní přehled</button>
+                    <div class="response-area" id="monthly-detail-response" style="display: none;"></div>
+                </div>
+
+                <!-- Yearly Overview Test -->
+                <div class="test-section" id="yearly-overview-section">
+                    <h2>📈 Test ročního přehledu</h2>
+                    <div class="form-group">
+                        <label>Rok:</label>
+                        <input type="number" id="yearly-year" value="2025" min="2020" max="2030">
+                    </div>
+                    <button class="btn btn-primary" onclick="testYearlyOverview()">🚀 Testovat roční přehled</button>
+                    <div class="response-area" id="yearly-overview-response" style="display: none;"></div>
+                </div>
+
+                <!-- Export CSV Test -->
+                <div class="test-section" id="export-csv-section">
+                    <h2>📤 Test exportu CSV</h2>
+                    <p>Stáhne CSV soubor se všemi záznamy.</p>
+                    <button class="btn btn-success" onclick="testExportCSV()">🚀 Testovat export</button>
+                    <div class="response-area" id="export-csv-response" style="display: none;"></div>
+                </div>
+
+                <!-- Import CSV Test -->
+                <div class="test-section" id="import-csv-section">
+                    <h2>📥 Test importu CSV</h2>
+                    <div class="form-group">
+                        <label>CSV soubor:</label>
+                        <input type="file" id="import-file" accept=".csv">
+                    </div>
+                    <button class="btn btn-warning" onclick="testImportCSV()">🚀 Testovat import</button>
+                    <div class="response-area" id="import-csv-response" style="display: none;"></div>
+                </div>
+
+                <!-- Get Users Test -->
+                <div class="test-section" id="get-users-section">
+                    <h2>👥 Test načtení uživatelů</h2>
+                    <p>Načte seznam všech uživatelů (pouze pro administrátory).</p>
+                    <button class="btn btn-primary" onclick="testGetUsers()">🚀 Testovat načtení uživatelů</button>
+                    <div class="response-area" id="get-users-response" style="display: none;"></div>
+                </div>
+
+                <!-- Create User Test -->
+                <div class="test-section" id="create-user-section">
+                    <h2>👤 Test vytvoření uživatele</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Uživatelské jméno:</label>
+                            <input type="text" id="new-username" value="testuser">
+                        </div>
+                        <div class="form-group">
+                            <label>Heslo:</label>
+                            <input type="password" id="new-password" value="testpass123">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Role:</label>
+                            <select id="new-role">
+                                <option value="user">Uživatel</option>
+                                <option value="admin">Administrátor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="testCreateUser()">🚀 Testovat vytvoření</button>
+                    <div class="response-area" id="create-user-response" style="display: none;"></div>
+                </div>
+
+                <!-- Update User Test -->
+                <div class="test-section" id="update-user-section">
+                    <h2>✏️ Test úpravy uživatele</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>ID uživatele:</label>
+                            <input type="number" id="edit-user-id" value="2" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Nové uživatelské jméno:</label>
+                            <input type="text" id="edit-username" value="editeduser">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Nová role:</label>
+                            <select id="edit-role">
+                                <option value="user">Uživatel</option>
+                                <option value="admin">Administrátor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-warning" onclick="testUpdateUser()">🚀 Testovat úpravu</button>
+                    <div class="response-area" id="update-user-response" style="display: none;"></div>
+                </div>
+
+                <!-- Change Password Test -->
+                <div class="test-section" id="change-password-section">
+                    <h2>🔑 Test změny hesla</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>ID uživatele:</label>
+                            <input type="number" id="change-pass-id" value="2" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Nové heslo:</label>
+                            <input type="password" id="change-new-password" value="newpass123">
+                        </div>
+                    </div>
+                    <button class="btn btn-warning" onclick="testChangePassword()">🚀 Testovat změnu hesla</button>
+                    <div class="response-area" id="change-password-response" style="display: none;"></div>
+                </div>
+
+                <!-- Delete User Test -->
+                <div class="test-section" id="delete-user-section">
+                    <h2>🗑️ Test smazání uživatele</h2>
+                    <div class="form-group">
+                        <label>ID uživatele ke smazání:</label>
+                        <input type="number" id="delete-user-id" value="3" min="1">
+                    </div>
+                    <button class="btn btn-danger" onclick="testDeleteUser()">🚀 Testovat smazání</button>
+                    <div class="response-area" id="delete-user-response" style="display: none;"></div>
+                </div>
+
+                <!-- Dashboard Stats Test -->
+                <div class="test-section" id="dashboard-stats-section">
+                    <h2>📊 Test dashboard statistik</h2>
+                    <p>Načte komplexní statistiky pro dashboard - záznamy, uživatele, trendy a finanční data.</p>
+                    <button class="btn btn-primary" onclick="testDashboardStats()">🚀 Testovat dashboard</button>
+                    <div class="response-area" id="dashboard-stats-response" style="display: none;"></div>
+                </div>
+
+                <!-- Get Audit Logs Test -->
+                <div class="test-section" id="get-audit-logs-section">
+                    <h2>🔒 Test načtení audit logů</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Stránka:</label>
+                            <input type="number" id="audit-page" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Limit:</label>
+                            <input type="number" id="audit-limit" value="10" min="1" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Uživatel:</label>
+                            <input type="text" id="audit-username" placeholder="Uživatelské jméno">
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Typ akce:</label>
+                            <select id="audit-action">
+                                <option value="">Všechny</option>
+                                <option value="login">Přihlášení</option>
+                                <option value="logout">Odhlášení</option>
+                                <option value="create_record">Vytvoření záznamu</option>
+                                <option value="update_record">Úprava záznamu</option>
+                                <option value="delete_record">Smazání záznamu</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Filtr - Závažnost:</label>
+                            <select id="audit-severity">
+                                <option value="">Všechny</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Varování</option>
+                                <option value="error">Chyba</option>
+                                <option value="critical">Kritická</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Datum od:</label>
+                            <input type="date" id="audit-date-from">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testGetAuditLogs()">🚀 Testovat načtení</button>
+                    <div class="response-area" id="get-audit-logs-response" style="display: none;"></div>
+                </div>
+
+                <!-- Audit Statistics Test -->
+                <div class="test-section" id="audit-statistics-section">
+                    <h2>📊 Test audit statistik</h2>
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Datum od:</label>
+                            <input type="date" id="stats-date-from">
+                        </div>
+                        <div class="form-group">
+                            <label>Datum do:</label>
+                            <input type="date" id="stats-date-to">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testAuditStatistics()">🚀 Testovat statistiky</button>
+                    <div class="response-area" id="audit-statistics-response" style="display: none;"></div>
+                </div>
+
+                <!-- Export Audit CSV Test -->
+                <div class="test-section" id="export-audit-csv-section">
+                    <h2>📤 Test exportu audit CSV</h2>
+                    <p>Stáhne CSV soubor se audit logy. Použijí se filtry z testu "Načtení audit logů".</p>
+                    <button class="btn btn-success" onclick="testExportAuditCSV()">🚀 Testovat export</button>
+                    <div class="response-area" id="export-audit-csv-response" style="display: none;"></div>
+                </div>
+
+                <!-- Cleanup Audit Logs Test -->
+                <div class="test-section" id="cleanup-audit-logs-section">
+                    <h2>🗑️ Test vymazání starých audit logů</h2>
+                    <div class="form-group">
+                        <label>Počet dní k uchování (min. 30):</label>
+                        <input type="number" id="cleanup-days" value="365" min="30">
+                    </div>
+                    <p style="color: #f44336; margin: 10px 0;">⚠️ Pozor: Tato akce trvale smaže staré audit logy!</p>
+                    <button class="btn btn-danger" onclick="testCleanupAuditLogs()">🚀 Testovat vymazání</button>
+                    <div class="response-area" id="cleanup-audit-logs-response" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-info">
+                <span id="current-test">Vyberte test ze seznamu</span>
+            </div>
+            <button class="run-all-btn" onclick="runAllTests()">🚀 Spustit všechny testy</button>
+        </div>
+    </div>
+
+    <script>
+        // API Test Suite pro Evidence přání videií v3.2.0
+        
+        const API_BASE = 'api.php';
+        let testResults = { total: 0, passed: 0, failed: 0 };
+        let currentSessionToken = null;
+
+        // Inicializace
+        document.addEventListener('DOMContentLoaded', function() {
+            // Nastavení dnešního data
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('create-datum').value = today;
+            
+            // Event listenery pro navigaci
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const testType = this.getAttribute('data-test');
+                    showTestSection(testType);
+                    updateCurrentTest(this.textContent);
+                    
+                    // Aktivní tlačítko
+                    document.querySelectorAll('.test-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Zobrazení prvního testu
+            showTestSection('login');
+            updateCurrentTest('Přihlášení');
+        });
+
+        function showTestSection(testType) {
+            // Skrytí všech sekcí
+            document.querySelectorAll('.test-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Zobrazení vybrané sekce
+            const targetSection = document.getElementById(testType + '-section');
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+        }
+
+        function updateCurrentTest(testName) {
+            document.getElementById('current-test').textContent = `Aktuální test: ${testName}`;
+        }
+
+        function updateTestStats() {
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+        }
+
+        function updateTestButtonStatus(testType, success) {
+            const btn = document.querySelector(`[data-test="${testType}"]`);
+            if (btn) {
+                btn.classList.remove('success', 'error');
+                btn.classList.add(success ? 'success' : 'error');
+            }
+        }
+
+        function showResponse(responseId, data, success = true) {
+            const responseElement = document.getElementById(responseId);
+            responseElement.style.display = 'block';
+            
+            let statusText = success ? '✅ ÚSPĚCH' : '❌ CHYBA';
+            let timestamp = new Date().toLocaleString('cs-CZ');
+            
+            responseElement.innerHTML = `
+                <h4>${statusText} - ${timestamp}</h4>
+                <div class="response-content">${JSON.stringify(data, null, 2)}</div>
+            `;
+            
+            // Scroll k odpovědi
+            responseElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function addLoading(buttonElement) {
+            const loading = document.createElement('span');
+            loading.className = 'loading';
+            buttonElement.insertBefore(loading, buttonElement.firstChild);
+            buttonElement.disabled = true;
+        }
+
+        function removeLoading(buttonElement) {
+            const loading = buttonElement.querySelector('.loading');
+            if (loading) {
+                loading.remove();
+            }
+            buttonElement.disabled = false;
+        }
+
+        async function makeApiCall(action, data = {}, method = 'POST') {
+            try {
+                const url = `${API_BASE}?action=${action}`;
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (method === 'POST' && Object.keys(data).length > 0) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                return {
+                    success: response.ok,
+                    data: result,
+                    status: response.status
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    data: { error: error.message },
+                    status: 0
+                };
+            }
+        }
+
+        // Test funkce
+
+        async function testLogin() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            const result = await makeApiCall('login', { username, password });
+            
+            if (result.success && result.data.success) {
+                testResults.passed++;
+                updateTestButtonStatus('login', true);
+                currentSessionToken = result.data.user; // Store session info
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('login', false);
+            }
+            
+            showResponse('login-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testCheckSession() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const result = await makeApiCall('check-session', {}, 'GET');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('check-session', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('check-session', false);
+            }
+            
+            showResponse('check-session-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testLogout() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const result = await makeApiCall('logout', {}, 'POST');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('logout', true);
+                currentSessionToken = null;
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('logout', false);
+            }
+            
+            showResponse('logout-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testGetRecords() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const page = document.getElementById('records-page').value;
+            const stav = document.getElementById('records-stav').value;
+            const nick = document.getElementById('records-nick').value;
+            const prani = document.getElementById('records-prani').value;
+            
+            const filters = { page };
+            if (stav) filters.stav = stav;
+            if (nick) filters.nick = nick;
+            if (prani) filters.prani = prani;
+            
+            const result = await makeApiCall('get-records', filters);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('get-records', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('get-records', false);
+            }
+            
+            showResponse('get-records-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testCreateRecord() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const recordData = {
+                datum: document.getElementById('create-datum').value,
+                jmeno: document.getElementById('create-jmeno').value,
+                ucet: document.getElementById('create-ucet').value,
+                castka: document.getElementById('create-castka').value,
+                stav: document.getElementById('create-stav').value,
+                nick: document.getElementById('create-nick').value,
+                prani: document.getElementById('create-prani').value,
+                link: document.getElementById('create-link').value,
+                faktura: document.getElementById('create-faktura').value
+            };
+            
+            const result = await makeApiCall('create-record', recordData);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('create-record', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('create-record', false);
+            }
+            
+            showResponse('create-record-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testUpdateRecord() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const updateData = {
+                id: document.getElementById('update-id').value,
+                jmeno: document.getElementById('update-jmeno').value,
+                stav: document.getElementById('update-stav').value,
+                castka: document.getElementById('update-castka').value
+            };
+            
+            const result = await makeApiCall('update-record', updateData);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('update-record', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('update-record', false);
+            }
+            
+            showResponse('update-record-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testDeleteRecord() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const id = document.getElementById('delete-id').value;
+            
+            const result = await makeApiCall('delete-record', { id });
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('delete-record', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('delete-record', false);
+            }
+            
+            showResponse('delete-record-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testMonthlyOverview() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const year = document.getElementById('monthly-year').value;
+            const month = document.getElementById('monthly-month').value;
+            
+            const result = await makeApiCall('monthly-overview', { year, month });
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('monthly-overview', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('monthly-overview', false);
+            }
+            
+            showResponse('monthly-overview-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testMonthlyDetail() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const year = document.getElementById('monthly-detail-year').value;
+            const month = document.getElementById('monthly-detail-month').value;
+            
+            const result = await makeApiCall('monthly-detail', { year, month });
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('monthly-detail', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('monthly-detail', false);
+            }
+            
+            showResponse('monthly-detail-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testYearlyOverview() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const year = document.getElementById('yearly-year').value;
+            
+            const result = await makeApiCall('yearly-overview', { year });
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('yearly-overview', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('yearly-overview', false);
+            }
+            
+            showResponse('yearly-overview-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testExportCSV() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            try {
+                const response = await fetch(`${API_BASE}?action=export-csv`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'export_test.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    testResults.passed++;
+                    updateTestButtonStatus('export-csv', true);
+                    showResponse('export-csv-response', { 
+                        success: true, 
+                        message: 'CSV export byl úspěšně stažen', 
+                        size: blob.size + ' bytes' 
+                    }, true);
+                } else {
+                    throw new Error('Export failed');
+                }
+            } catch (error) {
+                testResults.failed++;
+                updateTestButtonStatus('export-csv', false);
+                showResponse('export-csv-response', { error: error.message }, false);
+            }
+            
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testImportCSV() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                testResults.failed++;
+                updateTestButtonStatus('import-csv', false);
+                showResponse('import-csv-response', { error: 'Nebyl vybrán žádný soubor' }, false);
+                updateTestStats();
+                removeLoading(btn);
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('csv_file', file);
+            
+            try {
+                const response = await fetch(`${API_BASE}?action=import-csv`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    testResults.passed++;
+                    updateTestButtonStatus('import-csv', true);
+                } else {
+                    testResults.failed++;
+                    updateTestButtonStatus('import-csv', false);
+                }
+                
+                showResponse('import-csv-response', result, response.ok);
+            } catch (error) {
+                testResults.failed++;
+                updateTestButtonStatus('import-csv', false);
+                showResponse('import-csv-response', { error: error.message }, false);
+            }
+            
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testGetUsers() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const result = await makeApiCall('get-users', {}, 'GET');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('get-users', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('get-users', false);
+            }
+            
+            showResponse('get-users-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testCreateUser() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const userData = {
+                username: document.getElementById('new-username').value,
+                password: document.getElementById('new-password').value,
+                role: document.getElementById('new-role').value
+            };
+            
+            const result = await makeApiCall('create-user', userData);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('create-user', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('create-user', false);
+            }
+            
+            showResponse('create-user-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testUpdateUser() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const updateData = {
+                id: document.getElementById('edit-user-id').value,
+                username: document.getElementById('edit-username').value,
+                role: document.getElementById('edit-role').value
+            };
+            
+            const result = await makeApiCall('update-user', updateData);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('update-user', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('update-user', false);
+            }
+            
+            showResponse('update-user-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testChangePassword() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const passwordData = {
+                id: document.getElementById('change-pass-id').value,
+                new_password: document.getElementById('change-new-password').value
+            };
+            
+            const result = await makeApiCall('change-password', passwordData);
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('change-password', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('change-password', false);
+            }
+            
+            showResponse('change-password-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testDeleteUser() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const id = document.getElementById('delete-user-id').value;
+            
+            const result = await makeApiCall('delete-user', { id });
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('delete-user', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('delete-user', false);
+            }
+            
+            showResponse('delete-user-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function runAllTests() {
+            const runBtn = event.target;
+            runBtn.textContent = '🔄 Spouštím testy...';
+            runBtn.disabled = true;
+            
+            // Reset statistik
+            testResults = { total: 0, passed: 0, failed: 0 };
+            updateTestStats();
+            
+            // Reset všech tlačítek
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.classList.remove('success', 'error');
+            });
+            
+            // Postupné spuštění všech testů
+            const tests = [
+                { func: testLogin, section: 'login' },
+                { func: testCheckSession, section: 'check-session' },
+                { func: testGetRecords, section: 'get-records' },
+                { func: testCreateRecord, section: 'create-record' },
+                { func: testMonthlyOverview, section: 'monthly-overview' },
+                { func: testYearlyOverview, section: 'yearly-overview' },
+                { func: testGetUsers, section: 'get-users' },
+                { func: testDashboardStats, section: 'dashboard-stats' },
+                { func: testGetAuditLogs, section: 'get-audit-logs' },
+                { func: testAuditStatistics, section: 'audit-statistics' },
+                { func: testExportCSV, section: 'export-csv' }
+            ];
+            
+            for (let test of tests) {
+                showTestSection(test.section);
+                updateCurrentTest(`Automatický test: ${test.section}`);
+                
+                // Simulujeme kliknutí na tlačítko
+                const btn = document.querySelector(`[data-test="${test.section}"]`);
+                if (btn) {
+                    btn.click();
+                }
+                
+                // Čekáme 2 sekundy mezi testy
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            // Finální statistiky
+            setTimeout(() => {
+                runBtn.textContent = `✅ Hotovo! ${testResults.passed}/${testResults.total} úspěšných`;
+                runBtn.disabled = false;
+                
+                // Reset po 5 sekundách
+                setTimeout(() => {
+                    runBtn.textContent = '🚀 Spustit všechny testy';
+                }, 5000);
+            }, 1000);
+        }
+
+        // Dashboard test funkce
+
+        async function testDashboardStats() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            try {
+                const result = await makeApiCall('dashboard-stats', {}, 'GET');
+                
+                if (result.success) {
+                    testResults.passed++;
+                    updateTestButtonStatus('dashboard-stats', true);
+                } else {
+                    updateTestButtonStatus('dashboard-stats', false);
+                }
+                
+                showResponse('dashboard-stats-response', result.data, result.success);
+                updateTestStats();
+            } catch (error) {
+                testResults.failed++;
+                updateTestButtonStatus('dashboard-stats', false);
+                showResponse('dashboard-stats-response', { error: error.message }, false);
+                updateTestStats();
+            } finally {
+                removeLoading(btn);
+            }
+        }
+
+        // Audit Log test funkce
+
+        async function testGetAuditLogs() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const page = document.getElementById('audit-page').value;
+            const limit = document.getElementById('audit-limit').value;
+            const username = document.getElementById('audit-username').value;
+            const action = document.getElementById('audit-action').value;
+            const severity = document.getElementById('audit-severity').value;
+            const dateFrom = document.getElementById('audit-date-from').value;
+            
+            const params = { page, limit };
+            if (username) params.username = username;
+            if (action) params.action_type = action;
+            if (severity) params.severity = severity;
+            if (dateFrom) params.date_from = dateFrom;
+            
+            const result = await makeApiCall('get-audit-logs', params, 'GET');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('get-audit-logs', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('get-audit-logs', false);
+            }
+            
+            showResponse('get-audit-logs-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testAuditStatistics() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const dateFrom = document.getElementById('stats-date-from').value;
+            const dateTo = document.getElementById('stats-date-to').value;
+            
+            const params = {};
+            if (dateFrom) params.date_from = dateFrom;
+            if (dateTo) params.date_to = dateTo;
+            
+            const result = await makeApiCall('audit-statistics', params, 'GET');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('audit-statistics', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('audit-statistics', false);
+            }
+            
+            showResponse('audit-statistics-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testExportAuditCSV() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            // Použijeme filtry z get-audit-logs sekce
+            const username = document.getElementById('audit-username').value;
+            const action = document.getElementById('audit-action').value;
+            const severity = document.getElementById('audit-severity').value;
+            const dateFrom = document.getElementById('audit-date-from').value;
+            
+            const params = new URLSearchParams();
+            if (username) params.append('username', username);
+            if (action) params.append('action_type', action);
+            if (severity) params.append('severity', severity);
+            if (dateFrom) params.append('date_from', dateFrom);
+            
+            try {
+                const response = await fetch(`${API_BASE}?action=export-audit-csv&${params}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'audit_export_test.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    testResults.passed++;
+                    updateTestButtonStatus('export-audit-csv', true);
+                    showResponse('export-audit-csv-response', { 
+                        success: true, 
+                        message: 'Audit CSV export byl úspěšně stažen', 
+                        size: blob.size + ' bytes' 
+                    }, true);
+                } else {
+                    throw new Error('Export failed');
+                }
+            } catch (error) {
+                testResults.failed++;
+                updateTestButtonStatus('export-audit-csv', false);
+                showResponse('export-audit-csv-response', { error: error.message }, false);
+            }
+            
+            updateTestStats();
+            removeLoading(btn);
+        }
+
+        async function testCleanupAuditLogs() {
+            const btn = event.target;
+            addLoading(btn);
+            
+            testResults.total++;
+            
+            const days = document.getElementById('cleanup-days').value;
+            
+            if (parseInt(days) < 30) {
+                testResults.failed++;
+                updateTestButtonStatus('cleanup-audit-logs', false);
+                showResponse('cleanup-audit-logs-response', { 
+                    error: 'Minimální doba uchování je 30 dní' 
+                }, false);
+                updateTestStats();
+                removeLoading(btn);
+                return;
+            }
+            
+            if (!confirm(`Opravdu chcete otestovat smazání audit logů starších než ${days} dní? (Toto je jen test)`)) {
+                testResults.total--; // Nedokončený test
+                removeLoading(btn);
+                return;
+            }
+            
+            const result = await makeApiCall('cleanup-audit-logs', { days }, 'GET');
+            
+            if (result.success) {
+                testResults.passed++;
+                updateTestButtonStatus('cleanup-audit-logs', true);
+            } else {
+                testResults.failed++;
+                updateTestButtonStatus('cleanup-audit-logs', false);
+            }
+            
+            showResponse('cleanup-audit-logs-response', result.data, result.success);
+            updateTestStats();
+            removeLoading(btn);
+        }
+    </script>
+</body>
+</html>
